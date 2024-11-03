@@ -1,0 +1,79 @@
+﻿@page "/complaint/detail/{id:int}"
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
+@using StudentsManagement.Shared.Models
+@inject NavigationManager navigation;
+@inject HttpClient Http; // Inject HttpClient for API calls
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@inject IJSRuntime JSRuntime
+
+<h3>View Complaint Detail</h3>
+
+<hr />
+<div class="row">
+    <div class="col-md-12">
+        <table class="table">
+            <tr>
+                <th>Complaint Type</th>
+                <td>@complaints.ComplaintType?.Description</td>
+            </tr>
+            <tr>
+                <th>Complainant</th>
+                <td>@createdByUser.UserName</td> <!-- Display the fetched UserName -->
+            </tr>
+            <tr>
+                <th>Phone Number</th>
+                <td>@complaints.PhoneNumber</td>
+            </tr>
+            <tr>
+                <th>Complaint Date</th>
+                <td>@complaints.ComplaintDate</td>
+            </tr>
+            <tr>
+                <th>Status</th>
+                <td>@complaints.Status?.Description</td>
+            </tr>
+        </table>
+    </div>
+    <div class="form-group">
+        <a class="btn btn-success" href="/complaint/edit/@complaints.Id"> Update Complaint </a>
+        <button type="button" @onclick="Cancel" class="btn btn-danger">Back to list</button>
+    </div>
+</div>
+
+@code {
+    public Complaint complaints { get; set; } = new();
+    public ApplicationUserDto createdByUser { get; set; } = new(); // Holds user details
+    [Parameter]
+    public int id { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadComplaint();
+    }
+
+    private async Task LoadComplaint()
+    {
+        // Fetch the complaint details
+        complaints = await ComplaintService.GetByIdAsync(id);
+
+        // Fetch user details based on CreatedById
+        if (!string.IsNullOrEmpty(complaints.CreatedById))
+        {
+            createdByUser = await Http.GetFromJsonAsync<ApplicationUserDto>($"api/user/{complaints.CreatedById}");
+        }
+    }
+
+    public void Cancel()
+    {
+        navigation.NavigateTo("/complaints-list", forceLoad: true);
+    }
+
+    // DTO for user information
+    public class ApplicationUserDto
+    {
+        public string Id { get; set; }
+        public string UserName { get; set; }
+        public string Email { get; set; }
+    }
+}

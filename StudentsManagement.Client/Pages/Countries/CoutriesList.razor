@@ -1,9 +1,11 @@
 ﻿@page "/countries-list"
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize(Roles = "System, SystemSetting")]
 @using StudentsManagement.Client.Services
 @using StudentsManagement.Shared.Models
 @inject NavigationManager navigation;
 @inject IJSRuntime JsRunTime;
-
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
 
 <div class="row">
     <div class="col-12">
@@ -17,11 +19,15 @@
                     <div class="col-md-12">
                         <div class="card">
                             <div class="card-header"></div>
-                            @if (!AllCountries.Any())
+                            @if (countries == null)
                             {
                                 <p><em>Loading Countries...</em></p>
                             }
-                            @if (AllCountries.Any())
+                            else if (!countries.Items.Any())
+                            {
+                                <div class="alert alert-info"> There is no Country List Available</div>
+                            }
+                            else
                             {
                                 <div class="card-body">
                                     <table class="table table-striped table-hover">
@@ -30,32 +36,38 @@
                                                 <th>Id</th>
                                                 <th>Country Code</th>
                                                 <th>Country Name</th>
+                                                <th>View</th>
                                                 <th>Edit</th>
                                                 <th>Delete</th>
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            @foreach (var country in AllCountries)
+                                            @foreach (var country in countries.Items)
                                             {
                                                 <tr>
                                                     <td>@country.Id</td>
                                                     <td>@country.Code</td>
                                                     <td>@country.Name</td>
                                                     <td>
+                                                        <a class="btn btn-primary" href="/country/detail/@country.Id"> View </a>
+                                                    </td>
+                                                    <td>
                                                         <a class="btn btn-success" href="/country/edit/@country.Id"> Edit </a>
                                                     </td>
                                                     <td>
-                                                        <a class="btn btn-danger" href="/country/delete/@country.Id"> Delete </a>
+                                                        <a class="btn btn-danger" @onclick="() => DeleteCountry(country.Id)"> Delete </a>
                                                     </td>
                                                 </tr>
                                             }
                                         </tbody>
                                     </table>
+                                    <!-- Pagination Controls -->
+                                    <div class="button-group mt-3">
+                                        <button class="btn btn-custom" @onclick="PreviousPage" style="@GetButtonStyle(!CanGoToPreviousPage)">Previous</button>
+                                        <button class="btn btn-custom ms-2" @onclick="NextPage" style="@GetButtonStyle(!CanGoToNextPage)">Next</button>
+                                    </div>
+                                    <p class="mt-2">Page @countries.CurrentPage of @countries.TotalPages</p>
                                 </div>
-                            }
-                            else
-                            {
-                                <div class="alert alert-info"> There is no Countries List Available</div>
                             }
                         </div>
                     </div>
@@ -66,20 +78,57 @@
 </div>
 
 @code {
-    private List<Country> AllCountries { get; set; } = new();
+    private PaginationModel<Country>? countries;
+    private int currentPage = 1;
+    private int pageSize = 10;
 
     protected override async Task OnInitializedAsync()
     {
-        await LoadAllCountries();
+        await LoadPagedBooks(currentPage);
     }
 
-    private async Task LoadAllCountries()
+    private async Task LoadPagedBooks(int page)
     {
-        var countries = await CountryService.GetAllAsync();
+        countries = await CountryService.GetPagedCountriesAsync(page, pageSize);
+    }
 
-        if (countries is null) return;
-        AllCountries.Clear();
-        AllCountries.AddRange(countries);
+    private async Task NextPage()
+    {
+        if (CanGoToNextPage)
+        {
+            currentPage++;
+            await LoadPagedBooks(currentPage);
+        }
+    }
 
+    private async Task PreviousPage()
+    {
+        if (CanGoToPreviousPage)
+        {
+            currentPage--;
+            await LoadPagedBooks(currentPage);
+        }
+    }
+
+    private string GetButtonStyle(bool isInactive)
+    {
+        return isInactive ? "opacity: 0.6; pointer-events: none;" : "";
+    }
+
+    private bool CanGoToPreviousPage => countries?.CurrentPage > 1;
+    private bool CanGoToNextPage => countries?.CurrentPage < countries?.TotalPages;
+
+    private async Task DeleteCountry(int id)
+    {
+        bool confirm = await JsRunTime.InvokeAsync<bool>("confirm", $"Are you sure you want to delete?");
+        if (confirm)
+        {
+            var country = await CountryService.DeleteAsync(id);
+            bool result = country != null;
+            if (result)
+            {
+                await LoadPagedBooks(currentPage);
+            }
+        }
     }
 }

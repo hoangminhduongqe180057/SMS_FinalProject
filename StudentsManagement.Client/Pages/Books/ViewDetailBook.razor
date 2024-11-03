@@ -1,0 +1,66 @@
+﻿@page "/book/detail/{id:int}"
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
+@using StudentsManagement.Shared.Models
+@inject NavigationManager navigation;
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@inject IJSRuntime JSRuntime
+
+<h3>View Book Detail</h3>
+
+<hr />
+<div class="row">
+    <div class="col-md-12">
+        <table class="table">
+            <tr>
+                <th>Book Name</th>
+                <td>@bookobj.Name</td>
+            </tr>
+            <tr>
+                <th>Book Auther</th>
+                <td>@bookobj.Auther</td>
+            </tr>
+            <tr>
+                <th>No Of Copies</th>
+                <td>@bookobj.NoOfCopy</td>
+            </tr>
+            <tr>
+                <th>Book Category</th>
+                <td>@bookobj.BookCategory?.Description</td>
+            </tr>
+        </table>
+    </div>
+    <div class="form-group">
+        <a class="btn btn-success" href="/book/edit/@bookobj.Id"> Update Book </a>
+        <button type="button" @onclick="()=>Cancel()" class="btn btn-danger">Back to list</button>
+    </div>
+</div>
+
+@code {
+    [SupplyParameterFromForm]
+    public Book bookobj { get; set; } = new();
+
+    [Parameter]
+    public int id { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadBook();
+    }
+
+    private async Task LoadBook()
+    {
+        bookobj = await BookService.GetByIdAsync(id);
+    }
+
+    protected async Task Delete()
+    {
+        var result = await BookService.DeleteAsync(id);
+        navigation.NavigateTo("/books-list", forceLoad: true);
+    }
+
+    public void Cancel()
+    {
+        navigation.NavigateTo("/books-list", forceLoad: true);
+    }
+}

@@ -46,5 +46,12 @@ namespace StudentsManagement.Client.Services
             var respone = await data.Content.ReadFromJsonAsync<SystemCode>();
             return respone;
         }
+
+        public async Task<PaginationModel<SystemCode>> GetPagedSystemCodesAsync(int pageNumber, int pageSize)
+        {
+            var response = await _httpClient.GetFromJsonAsync<PaginationModel<SystemCode>>(
+                $"api/systemCode?pageNumber={pageNumber}&pageSize={pageSize}");
+            return response;
+        }
     }
 }

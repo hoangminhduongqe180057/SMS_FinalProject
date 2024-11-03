@@ -7,7 +7,9 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using StudentsManagement.Client.Repository;
 using StudentsManagement.Data;
+using StudentsManagement.Services;
 using StudentsManagement.Shared.Models;
+using StudentsManagement.Shared.StudentRepository;
 
 namespace StudentsManagement.Controllers
 {
@@ -16,10 +18,12 @@ namespace StudentsManagement.Controllers
     public class TeachersController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
+        private readonly ITeacherRepository _teacherRepository;
 
-        public TeachersController(ApplicationDbContext context)
+        public TeachersController(ApplicationDbContext context, ITeacherRepository teachertRepository)
         {
             _context = context;
+            _teacherRepository = teachertRepository;
         }
 
         // GET: api/Teachers
@@ -99,6 +103,76 @@ namespace StudentsManagement.Controllers
         private bool TeacherExists(int id)
         {
             return _context.Teachers.Any(e => e.Id == id);
+        }
+
+        [HttpGet("Total-Teachers")]
+        public async Task<ActionResult<int>> GetTotalTeachersCountAsync()
+        {
+            var totalTeachers = await _context.Teachers.CountAsync();
+            return Ok(totalTeachers);
+        }
+
+        [HttpGet("Search")]
+        public async Task<ActionResult<List<Teacher>>> SearchTeachersAsync(
+            [FromQuery] string name,
+            [FromQuery] string email,
+            [FromQuery] string phoneNumber)
+        {
+            var query = _context.Teachers
+                .Include(s => s.Gender)
+                .Include(x => x.MaritalStatus)
+                .Include(d => d.Designation)
+                .AsQueryable();
+
+            // Apply filters
+
+            if (!string.IsNullOrWhiteSpace(name))
+                query = query.Where(s => (s.FirstName + " " + (s.MiddleName ?? "") + " " + s.LastName).Trim().Contains(name));
+
+            if (!string.IsNullOrWhiteSpace(email))
+                query = query.Where(s => s.EmailAddress.Contains(email));
+
+            if (!string.IsNullOrWhiteSpace(phoneNumber))
+                query = query.Where(s => s.PhoneNumber.Contains(phoneNumber));
+
+            var teachers = await query.ToListAsync();
+            return Ok(teachers);
+        }
+
+        [HttpGet("paged")]
+        public async Task<ActionResult<PaginationModel<Teacher>>> GetPagedTeachersAsync(
+            [FromQuery] int pageNumber, [FromQuery] int pageSize,
+            [FromQuery] string? id, [FromQuery] string? name,
+            [FromQuery] string? email, [FromQuery] string? phoneNumber,
+            [FromQuery] string? sortField,
+            [FromQuery] bool sortAscending = true)
+        {
+            var searchParameters = new SearchParameters
+            {
+                Name = name,
+                Email = email,
+                PhoneNumber = phoneNumber,
+                SortField = sortField,
+                SortAscending = sortAscending
+            };
+
+            var result = await _teacherRepository.GetPagedTeachersAsync(pageNumber, pageSize, searchParameters);
+            return Ok(result);
+        }
+
+        [HttpPost("Import-Teachers")]
+
+        public async Task<IActionResult> ImportTeachers(IFormFile file)
+        {
+            if (file == null || file.Length == 0)
+            {
+                return BadRequest("No file provided.");
+            }
+
+            using var stream = file.OpenReadStream();
+            bool result = await _teacherRepository.ImportTeachersAsync(stream);
+
+            return result ? Ok("Teachers imported successfully.") : StatusCode(500, "Failed to import teachers.");
         }
     }
 }

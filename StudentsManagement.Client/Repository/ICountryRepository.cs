@@ -9,5 +9,6 @@ namespace StudentsManagement.Client.Repository
         Task<Country> DeleteAsync(int countryId);
         Task<Country> GetByIdAsync(int countryId);
         Task<List<Country>> GetAllAsync();
+        Task<PaginationModel<Country>> GetPagedCountriesAsync(int pageNumber, int pageSize);
     }
 }

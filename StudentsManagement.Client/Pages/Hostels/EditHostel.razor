@@ -1,0 +1,113 @@
+﻿@page "/hostel/edit/{id:int}"
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
+@using StudentsManagement.Shared.Models
+@inject NavigationManager navigation;
+@inject IJSRuntime JsRuntime
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Update Hostel Details</h3>
+            </div>
+            <div class="card-body">
+                <EditForm Model="hostelobj" OnValidSubmit="UpdateHostel" FormName="updateHostel" OnInvalidSubmit="HandleInvalidSubmit">
+                    <DataAnnotationsValidator />
+                    <ValidationSummary />
+                    <div class="col-md-12">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="control-label">Hostel Name</label>
+                                    <InputText for="HostelName" class="form-control" @bind-Value="@hostelobj.HostelName" />
+                                    <ValidationMessage For="()=>hostelobj.HostelName" />
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="control-label">Hostel Address</label>
+                                    <InputText for="address" class="form-control" @bind-Value="@hostelobj.address" />
+                                    <ValidationMessage For="()=>hostelobj.address" />
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="control-label">Hostel Description</label>
+                                    <InputTextArea for="Description" class="form-control" @bind-Value="@hostelobj.Description" />
+                                    <ValidationMessage For="()=>hostelobj.Description" />
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="control-label">Hostel Type</label>
+                                    <InputSelect for="BookCategoryId" class="form-control" @bind-Value="@hostelobj.HostelTypeId">
+                                        <option value="">Select Hostel Type</option>
+                                        @if (HostelType != null && HostelType.Any())
+                                        {
+                                            @foreach (var hostel in HostelType)
+                                            {
+                                                <option value="@hostel.Id">@hostel.Description</option>
+                                            }
+                                        }
+                                    </InputSelect>
+                                    <ValidationMessage For="()=>hostelobj.HostelTypeId" />
+                                </div>
+                            </div>
+
+                        </div>
+                        <div class="form-group mt-4">
+                            <button type="submit" class="btn btn-primary">Save Hostel</button>
+                            <button type="button" @onclick="()=>Cancel()" class="btn btn-danger">Back to List</button>
+                        </div>
+                    </div>
+                </EditForm>
+            </div>
+        </div>
+    </div>
+</div>
+@code {
+
+    [SupplyParameterFromForm]
+    public Hostel hostelobj { get; set; } = new();
+    List<SystemCodeDetail> HostelType = new List<SystemCodeDetail>();
+    private string serverErrorMessage;
+
+    [Parameter]
+    public int id { get; set; }
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadHostel();
+    }
+    public async Task LoadHostel()
+    {
+        hostelobj = await HostelService.GetByIdAsync(id);
+        HostelType = await SystemCodeDetailService.GetByCodeAsync("HostelType");
+    }
+
+
+    protected async Task UpdateHostel()
+    {
+        try
+        {
+            var result = HostelService.UpdateAsync(hostelobj);
+            navigation.NavigateTo("/hostels-list", forceLoad: true);
+        }
+        catch (Exception ex)
+        {
+            // Log hoặc hiển thị lỗi
+            await JsRuntime.InvokeVoidAsync("alert", "Error while saving the hostel: " + ex.Message);
+        }
+    }
+    public void Cancel()
+    {
+        navigation.NavigateTo("/hostels-list", forceLoad: true);
+    }
+    private void HandleInvalidSubmit(EditContext editContext)
+    {
+        serverErrorMessage = "Please fill in all required fields.";
+    }
+}

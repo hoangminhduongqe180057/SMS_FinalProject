@@ -1,0 +1,65 @@
+﻿@page "/subject/detail/{id:int}"
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
+@using StudentsManagement.Shared.Models
+@inject NavigationManager navigation;
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+
+<h3>View Subject Detail</h3>
+
+<hr />
+<div class="row">
+    <div class="col-md-12">
+        <table class="table">
+            <tr>
+                <th>Subject Name</th>
+                <td>@subjectobj.Name</td>
+            </tr>
+            <tr>
+                <th>Description</th>
+                <td>@subjectobj.Description</td>
+            </tr>
+            <tr>
+                <th>Created By</th>
+                <td>@subjectobj.CreatedById</td>
+            </tr>
+            <tr>
+                <th>Created On</th>
+                <td>@subjectobj.CreatedOn.ToShortDateString()</td>
+            </tr>
+        </table>
+    </div>
+    <div class="form-group">
+        <a class="btn btn-success" href="/subject/edit/@subjectobj.Id"> Update Subject </a>
+        <button type="button" @onclick="()=>Cancel()" class="btn btn-danger">Back to list</button>
+    </div>
+</div>
+
+@code {
+    [SupplyParameterFromForm]
+    public Subject subjectobj { get; set; } = new();
+
+    [Parameter]
+    public int id { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadSubject();
+    }
+
+    private async Task LoadSubject()
+    {
+        subjectobj = await SubjectService.GetByIdAsync(id);
+    }
+
+    protected async Task Delete()
+    {
+        var result = await SubjectService.DeleteAsync(id);
+        navigation.NavigateTo("/subjects-list", forceLoad: true);
+    }
+
+    public void Cancel()
+    {
+        navigation.NavigateTo("/subjects-list", forceLoad: true);
+    }
+}

@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using StudentsManagement.Client.Repository;
 using StudentsManagement.Data;
 using StudentsManagement.Shared.Models;
 
@@ -15,10 +16,12 @@ namespace StudentsManagement.Controllers
     public class BooksController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
+        private readonly IBookRepository _bookRepository;
 
-        public BooksController(ApplicationDbContext context)
+        public BooksController(ApplicationDbContext context, IBookRepository bookRepository)
         {
             _context = context;
+            _bookRepository = bookRepository;
         }
 
         // GET: api/Books
@@ -103,6 +106,76 @@ namespace StudentsManagement.Controllers
         private bool BookExists(int id)
         {
             return _context.Books.Any(e => e.Id == id);
+        }
+
+        [HttpGet("Total-Books")]
+        public async Task<ActionResult<int>> GetTotalBooksCountAsync()
+        {
+            var totalBooks = await _context.Books.CountAsync();
+            return Ok(totalBooks);
+        }
+
+        [HttpGet("Search")]
+        public async Task<ActionResult<List<Book>>> SearchBooksAsync(
+            [FromQuery] string name,
+            [FromQuery] string author,
+            [FromQuery] string category)
+        {
+            var query = _context.Books
+                .Include(s => s.BookCategory)
+                .AsQueryable();
+
+            // Apply filters
+
+            if (!string.IsNullOrWhiteSpace(name))
+                query = query.Where(s => (s.Name).Trim().Contains(name));
+
+            if (!string.IsNullOrWhiteSpace(author))
+                query = query.Where(s => s.Auther.Contains(author));
+
+            if (!string.IsNullOrWhiteSpace(category))
+                query = query.Where(s => s.BookCategory.Description.Contains(category));
+
+            var books = await query.ToListAsync();
+            return Ok(books);
+        }
+
+        [HttpGet("paged")]
+        public async Task<ActionResult<PaginationModel<Book>>> GetPagedBooksAsync(
+            [FromQuery] int pageNumber, [FromQuery] int pageSize,
+            [FromQuery] string? id, [FromQuery] string? name,
+            [FromQuery] string? author, [FromQuery] string? noOfCopy,
+            [FromQuery] string? bookCategoryId,
+            [FromQuery] string? sortField,
+            [FromQuery] bool sortAscending = true)
+        {
+            var searchParameters = new SearchParameters
+            {
+                Name = name,
+                Author = author,
+                NoOfCopy = noOfCopy,
+                Category = bookCategoryId,
+                SortField = sortField,
+                SortAscending = sortAscending
+            };
+
+            var result = await _bookRepository.GetPagedBooksAsync(pageNumber, pageSize, searchParameters);
+            return Ok(result);
+        }
+
+        [HttpPost("Import-Books")]
+
+        public async Task<IActionResult> ImportBooks(IFormFile file)
+        {
+            if (file == null || file.Length == 0)
+            {
+                return BadRequest("No file provided.");
+            }
+
+            using var stream = file.OpenReadStream();
+            bool result = await _bookRepository.ImportBooksAsync(stream);
+
+            return result ? Ok("Books imported successfully.") : StatusCode(500, "Failed to import books.");
         }
     }
 }

@@ -1,7 +1,11 @@
 ﻿@page "/books-list"
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize(Roles = "System, Library")]
 @using StudentsManagement.Shared.Models
 @inject NavigationManager navigation;
 @inject IJSRuntime JsRuntime
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+
 <div class="row">
     <div class="col-12">
         <div class="card">
@@ -9,16 +13,73 @@
                 <h3 class="card-title">Books List</h3>
             </div>
             <div class="card-body">
+
+                <!-- Success message display -->
+                @if (!string.IsNullOrEmpty(successMessage))
+                {
+                    <div class="alert alert-success">@successMessage</div>
+                }
+
                 <div class="row">
-                    <p><a class="btn btn-success float-end" href="/add-book">Add New Book</a></p>
                     <div class="col-md-12">
                         <div class="card">
-                            <div class="card-header"></div>
-                            @if (!AllBooks.Any())
+                            <div class="card-header">
+                                <div class="row">
+                                    <div class="col-12 d-flex justify-content-between align-items-start">
+                                        <!-- Left-aligned: Import Button -->
+                                        <div class="file-input-container">
+                                            <InputFile OnChange="HandleFileSelected" accept=".csv" class="file-input-custom" id="fileInput" />
+                                            <button class="btn btn-primary btn-custom mt-2" @onclick="HandleImportClick" disabled="@isImporting">Import Books</button>
+                                        </div>
+
+                                        <!-- Right-aligned: Add and Export Buttons -->
+                                        <div class="d-flex">
+                                            <a class="btn btn-success me-2" style="margin-top: 8px" href="/add-book">Add New Book</a>
+                                            <a class="btn btn-success" style="margin-left: 10px; margin-top: 8px" @onclick="ExportBooksToCsv">Export Books to CSV</a>
+                                        </div>
+                                    </div>
+
+                                    <!-- Search Section below Import -->
+                                    <div class="col-12 mt-3">
+                                        <div class="input-group mb-3">
+                                            <div class="search-container" style="position: relative;">
+                                                <!-- Button to toggle search type dropdown -->
+                                                <button class="btn btn-primary" @onclick="ToggleSearchOptions">Search Types</button>
+
+                                                <!-- Smooth dropdown menu for search options -->
+                                                @if (showSearchOptions)
+                                                {
+                                                    <div class="dropdown-menu-container">
+                                                        <div class="dropdown-item" @onclick="@(() => SelectSearchType("Name"))">Name</div>
+                                                        <div class="dropdown-item" @onclick="@(() => SelectSearchType("Author"))">Author</div>
+                                                        <div class="dropdown-item" @onclick="@(() => SelectSearchType("Category"))">Category</div>
+                                                    </div>
+                                                }
+                                            </div>
+
+                                            <!-- Conditional Input Field for Search -->
+                                            @if (!string.IsNullOrEmpty(selectedSearchType))
+                                            {
+                                                <input type="text" class="form-control" placeholder="Enter @selectedSearchType" @bind="searchValue" style="max-width: 300px; margin-left: 10px;" />
+                                                <div class="input-group-append">
+                                                    <button class="btn btn-primary" @onclick="SearchBooks" style="margin-left: 10px;">Search</button>
+                                                    <button class="btn btn-secondary ms-2" @onclick="ClearSearch">Clear</button>
+                                                </div>
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            @if (books == null)
                             {
                                 <p><em>Loading Books...</em></p>
                             }
-                            @if (AllBooks.Any())
+                            else if (!books.Items.Any())
+                            {
+                                <div class="alert alert-info"> There is no Book List Available</div>
+                            }
+                            else
                             {
                                 <div class="card-body">
                                     <table class="table table-striped table-hover">
@@ -29,12 +90,13 @@
                                                 <th>Book Auther</th>
                                                 <th>No Of Copies</th>
                                                 <th>Book Category</th>
+                                                <th>View</th>
                                                 <th>Edit</th>
                                                 <th>Delete</th>
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            @foreach (var book in AllBooks)
+                                            @foreach (var book in books.Items)
                                             {
                                                 <tr>
                                                     <td>@book.Id</td>
@@ -43,20 +105,25 @@
                                                     <td>@book.NoOfCopy</td>
                                                     <td>@book.BookCategory?.Description</td>
                                                     <td>
+                                                        <a class="btn btn-primary" href="/book/detail/@book.Id"> View </a>
+                                                    </td>
+                                                    <td>
                                                         <a class="btn btn-success" href="/book/edit/@book.Id"> Edit </a>
                                                     </td>
                                                     <td>
-                                                        <a class="btn btn-danger" href="/book/delete/@book.Id"> Delete </a>
+                                                        <a class="btn btn-danger" @onclick="() => ConfirmDelete(book.Id)"> Delete </a>
                                                     </td>
                                                 </tr>
                                             }
                                         </tbody>
                                     </table>
+                                    <!-- Pagination Controls -->
+                                    <div class="button-group mt-3">
+                                        <button class="btn btn-custom" @onclick="PreviousPage" style="@GetButtonStyle(!CanGoToPreviousPage)">Previous</button>
+                                        <button class="btn btn-custom ms-2" @onclick="NextPage" style="@GetButtonStyle(!CanGoToNextPage)">Next</button>
+                                    </div>
+                                    <p class="mt-2">Page @books.CurrentPage of @books.TotalPages</p>
                                 </div>
-                            }
-                            else
-                            {
-                                <div class="alert alert-info"> There is no Books List Availlable</div>
                             }
                         </div>
                     </div>
@@ -67,20 +134,251 @@
 </div>
 
 @code {
-    public List<Book> AllBooks { get; set; } = new();
+    private PaginationModel<Book>? books;
+    private int currentPage = 1;
+    private int pageSize = 10;
+    private bool _isInitialized = false;
+
+    // Search functionality variables
+    private bool showSearchOptions = false;
+    private string selectedSearchType = "";
+    private string searchValue = "";
+    private IBrowserFile? selectedFile; // Import
+    private bool isImporting = false;
+    private string fileInputKey = Guid.NewGuid().ToString();
+    private string? successMessage;
+    private System.Threading.Timer? successMessageTimer;
+
+    private SearchParameters searchParameters = new SearchParameters();
+    private string currentSortField = "Id"; // Trường hiện tại để sắp xếp
+    private bool sortAscending = true; // Biến để theo dõi thứ tự sắp xếp (tăng dần hoặc giảm dần)
+    private bool isProcessing = false;  // Biến cờ để theo dõi quá trình xử lý
+
+    private async Task SortBy(string field)
+    {
+        if (isProcessing) return; // Ngăn chặn các thao tác khi đang xử lý
+        isProcessing = true;
+
+        try
+        {
+            if (currentSortField == field)
+            {
+                sortAscending = !sortAscending;
+            }
+            else
+            {
+                currentSortField = field;
+                sortAscending = true;
+            }
+            currentPage = 1;
+
+            await LoadPagedBooks(currentPage);
+        }
+        finally
+        {
+            isProcessing = false;  // Kết thúc xử lý
+        }
+    }
+
+    private async Task SearchBooks()
+    {
+        currentPage = 1;
+        await LoadPagedBooks(currentPage);
+    }
+
+    private async Task ClearSearch()
+    {
+        searchValue = "";
+        searchParameters = new SearchParameters();
+        currentPage = 1;
+        await LoadPagedBooks(currentPage);
+    }
 
     protected override async Task OnInitializedAsync()
     {
-        await LoadAllBooks();
+        await LoadPagedBooks(currentPage);
     }
-    public async Task LoadAllBooks()
+
+    private async Task LoadPagedBooks(int page)
     {
-        var data = await BookService.GetAllAsync();
+        searchParameters.SortField = currentSortField;  // Trường để sắp xếp
+        searchParameters.SortAscending = sortAscending;  // Thứ tự sắp xếp
 
-        if (data is null) return;
+        switch (selectedSearchType)
+        {
+            case "Name":
+                searchParameters.Name = searchValue;
+                break;
+            case "Author":
+                searchParameters.Author = searchValue;
+                break;
+            case "Category":
+                searchParameters.Category = searchValue;
+                break;
+        }
+        books = await BookService.GetPagedBooksAsync(page, pageSize, searchParameters);
+    }
 
-        AllBooks.Clear();
+    private async Task DebouncedSortBy(string field)
+    {
+        if (isProcessing) return;
+        isProcessing = true;
 
-        AllBooks.AddRange(data);
+        // Đợi một khoảng thời gian ngắn trước khi xử lý
+        await Task.Delay(300); // 300ms debounce
+
+        try
+        {
+            await SortBy(field);
+        }
+        finally
+        {
+            isProcessing = false;
+        }
+    }
+
+    private void ToggleSearchOptions()
+    {
+        showSearchOptions = !showSearchOptions;
+    }
+
+    private void SelectSearchType(string searchType)
+    {
+        selectedSearchType = searchType;
+        searchValue = "";
+        showSearchOptions = false;
+    }
+
+    private async Task NextPage()
+    {
+        if (CanGoToNextPage)
+        {
+            currentPage++;
+            await LoadPagedBooks(currentPage);
+        }
+    }
+
+    private async Task PreviousPage()
+    {
+        if (CanGoToPreviousPage)
+        {
+            currentPage--;
+            await LoadPagedBooks(currentPage);
+        }
+    }
+
+    private string GetButtonStyle(bool isInactive)
+    {
+        return isInactive ? "opacity: 0.6; pointer-events: none;" : "";
+    }
+
+    private bool CanGoToPreviousPage => books?.CurrentPage > 1;
+    private bool CanGoToNextPage => books?.CurrentPage < books?.TotalPages;
+
+    private async Task ConfirmDelete(int id)
+    {
+        bool confirm = await JsRuntime.InvokeAsync<bool>("confirm", $"Are you sure you want to delete?");
+        if (confirm)
+        {
+            var book = await BookService.DeleteAsync(id);
+            bool result = book != null;
+            if (result)
+            {
+                await LoadPagedBooks(currentPage);
+            }
+        }
+    }
+
+    private async Task ExportBooksToCsv()
+    {
+        if (_isInitialized)
+        {
+            var csvBytes = await BookService.ExportBooksToCsvAsync();
+            await JsRuntime.InvokeVoidAsync("downloadFile", "Books.csv", "text/csv", csvBytes);
+        }
+    }
+
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _isInitialized = true;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private void HandleFileSelected(InputFileChangeEventArgs e)
+    {
+        selectedFile = e.File; // Assign file
+    }
+
+    private async Task HandleImportClick()
+    {
+        if (isImporting)
+        {
+            Console.WriteLine("Import process already in progress.");
+            return;
+        }
+
+        isImporting = true;
+        successMessage = null; // Clear any previous success message
+        StateHasChanged();
+
+        try
+        {
+            await ImportBooks();
+        }
+        finally
+        {
+            isImporting = false;
+            StateHasChanged();
+            Console.WriteLine("Import process completed.");
+        }
+    }
+
+    private async Task ImportBooks()
+    {
+        if (selectedFile == null)
+        {
+            Console.WriteLine("No file selected for import.");
+            return;
+        }
+
+        try
+        {
+            using var fileStream = selectedFile.OpenReadStream();
+            bool isSuccess = await BookService.ImportBooksAsync(fileStream);
+
+            if (isSuccess)
+            {
+                successMessage = "Books imported successfully!";
+                selectedFile = null; // Clear the selected file
+
+                // Clear the file input display using JavaScript
+                await JsRuntime.InvokeVoidAsync("clearFileInput", "fileInput");
+
+                // Reload the students list after import
+                await LoadPagedBooks(currentPage);
+                Console.WriteLine("Book data loaded after import.");
+
+                // Start a timer to clear the success message after 5 seconds
+                successMessageTimer?.Dispose();
+                successMessageTimer = new System.Threading.Timer(_ =>
+                {
+                    successMessage = null;
+                    InvokeAsync(StateHasChanged); // Refresh UI
+                }, null, 5000, System.Threading.Timeout.Infinite); // 5 seconds delay
+            }
+            else
+            {
+                successMessage = "Failed to import books.";
+                Console.WriteLine("Import failed.");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error during import: {ex.Message}");
+        }
     }
 }

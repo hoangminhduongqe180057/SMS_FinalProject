@@ -1,15 +1,17 @@
 ﻿@page "/book/edit/{id:int}"
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
 @using StudentsManagement.Shared.Models
 @inject NavigationManager navigation;
 @inject IJSRuntime JSRuntime
-@rendermode InteractiveServer
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
 
 <h3>Update Book Detail</h3>
 
 <hr />
 <div class="row">
     <div class="col-md-12">
-        <EditForm Model="bookobj" OnValidSubmit="UpdateBook" FormName="updatebook">
+        <EditForm Model="bookobj" OnValidSubmit="UpdateBook" FormName="updatebook" OnInvalidSubmit="HandleInvalidSubmit">
             <DataAnnotationsValidator />
             <ValidationSummary />
             <div class="col-md-12">
@@ -60,7 +62,7 @@
                     </div>
                 </div>
                 <div class="form-group mt-4">
-                    <button type="submit" class="btn btn-primary">Update Book</button>
+                    <button type="submit" class="btn btn-primary">Save Book</button>
                     <button type="button" @onclick="()=>Cancel()" class="btn btn-danger">Back to list</button>
                 </div>
             </div>
@@ -72,6 +74,7 @@
     [SupplyParameterFromForm]
     public Book bookobj { get; set; } = new();
     List<SystemCodeDetail> BookCategory = new List<SystemCodeDetail>();
+    private string serverErrorMessage;
 
     [Parameter]
     public int id { get; set; }
@@ -92,7 +95,7 @@
         try
         {
             var result = await BookService.UpdateAsync(bookobj);
-            navigation.NavigateTo("/books-list");
+            navigation.NavigateTo("/books-list", forceLoad: true);
         }
         catch (Exception ex)
         {
@@ -102,7 +105,7 @@
 
     public void Cancel()
     {
-        navigation.NavigateTo("/books-list");
+        navigation.NavigateTo("/books-list", forceLoad: true);
     }
 
     // Phương thức tăng số lượng
@@ -129,5 +132,9 @@
         {
             bookobj.NoOfCopy = "0"; // Không cho giảm xuống giá trị âm
         }
+    }
+    private void HandleInvalidSubmit(EditContext editContext)
+    {
+        serverErrorMessage = "Please fill in all required fields.";
     }
 }

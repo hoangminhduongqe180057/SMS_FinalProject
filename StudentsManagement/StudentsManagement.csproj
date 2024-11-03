@@ -15,25 +15,37 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.AspNetCore.Components.QuickGrid.EntityFrameworkAdapter" Version="8.0.0" />
-    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="8.0.8" />
-    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.7.0" />
-	<ProjectReference Include="..\StudentsManagement.Shared\StudentsManagement.Shared.csproj" />
-    <ProjectReference Include="..\StudentsManagement.Client\StudentsManagement.Client.csproj" />
-    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="8.0.8" />
-    <PackageReference Include="Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore" Version="8.0.8" />
-    <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="8.0.8" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.8" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.8" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="8.0.8" />
-    <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="8.0.5" />
-
-    
-    
+    <None Include="wwwroot\Images\BaoDuy.png" />
+    <None Include="wwwroot\Images\Duong.png" />
+    <None Include="wwwroot\Images\KhuongDuy.png" />
+    <None Include="wwwroot\Images\Kiet.png" />
+    <None Include="wwwroot\Images\Tin.png" />
+    <None Include="wwwroot\Images\Vu.png" />
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="wwwroot\Login\" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.QuickGrid.EntityFrameworkAdapter" Version="8.0.0" />
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="8.0.10" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.7.0" />
+
+	  <!-- Add Microsoft.JSInterop for IJSRuntime -->
+	<PackageReference Include="Microsoft.JSInterop" Version="8.0.8" />
+	<ProjectReference Include="..\StudentsManagement.Shared\StudentsManagement.Shared.csproj" />
+    <ProjectReference Include="..\StudentsManagement.Client\StudentsManagement.Client.csproj" />
+	  <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="8.0.8" />
+	  
+	  
+    <PackageReference Include="Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore" Version="8.0.8" />
+    <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="8.0.8" />
+	  
+	  
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.8" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.8" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="8.0.8" />
+    <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="8.0.6" />
+
+    
+    
   </ItemGroup>
 
 </Project>

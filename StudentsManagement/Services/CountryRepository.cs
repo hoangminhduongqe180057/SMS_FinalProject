@@ -51,5 +51,22 @@ namespace StudentsManagement.Services
             await _context.SaveChangesAsync();
             return newcountry;
         }
+
+        public async Task<PaginationModel<Country>> GetPagedCountriesAsync(int pageNumber, int pageSize)
+        {
+            var totalItems = await _context.Countries.CountAsync();
+            var countries = await _context.Countries
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            return new PaginationModel<Country>
+            {
+                Items = countries,
+                TotalItems = totalItems,
+                CurrentPage = pageNumber,
+                PageSize = pageSize
+            };
+        }
     }
 }

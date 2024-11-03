@@ -1,8 +1,10 @@
 ﻿@page "/add-book"
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
 @using StudentsManagement.Shared.Models
 @inject NavigationManager navigation;
 @inject IJSRuntime JSRuntime
-@rendermode InteractiveServer
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
 
 <div class="row">
     <div class="col-12">
@@ -11,7 +13,7 @@
                 <h3 class="card-title">Add New Book</h3>
             </div>
             <div class="card-body">
-                <EditForm Model="bookobj" OnValidSubmit="CreateBook" FormName="addBook">
+                <EditForm Model="bookobj" OnValidSubmit="CreateBook" FormName="addBook" OnInvalidSubmit="HandleInvalidSubmit">
                     <DataAnnotationsValidator />
                     <ValidationSummary />
                     <div class="col-md-12">
@@ -73,6 +75,7 @@
     [SupplyParameterFromForm]
     public Book bookobj { get; set; } = new();
     List<SystemCodeDetail> BookCategory = new List<SystemCodeDetail>();
+    private string? serverErrorMessage;
 
     protected override async Task OnInitializedAsync()
     {
@@ -84,7 +87,7 @@
         try
         {
             var result = BookService.AddAsync(bookobj);
-            navigation.NavigateTo("/books-list");
+            navigation.NavigateTo("/books-list", forceLoad: true);
         }
         catch (Exception ex)
         {
@@ -93,7 +96,7 @@
     }
     public void Cancel()
     {
-        navigation.NavigateTo("/books-list");
+        navigation.NavigateTo("/books-list", forceLoad: true);
     }
     // Phương thức tăng số lượng
     private void IncrementCopies()
@@ -119,5 +122,9 @@
         {
             bookobj.NoOfCopy = "0"; // Không cho giảm xuống giá trị âm
         }
+    }
+    private void HandleInvalidSubmit(EditContext editContext)
+    {
+        serverErrorMessage = "Please fill in all required fields.";
     }
 }

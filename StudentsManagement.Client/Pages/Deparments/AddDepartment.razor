@@ -1,8 +1,10 @@
 ﻿@page "/add-department"
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
 @using StudentsManagement.Shared.Models
 @inject NavigationManager navigation;
 @inject IJSRuntime JSRuntime
-@rendermode InteractiveServer
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
 
 <div class="row">
     <div class="col-12">
@@ -11,7 +13,7 @@
                 <h3 class="card-title">Add New Department</h3>
             </div>
             <div class="card-body">
-                <EditForm Model="departmentobj" OnValidSubmit="CreateDepartment" FormName="addDepartment">
+                <EditForm Model="departmentobj" OnValidSubmit="CreateDepartment" FormName="addDepartment" OnInvalidSubmit="HandleInvalidSubmit">
                     <DataAnnotationsValidator />
                     <ValidationSummary />
                     <div class="col-md-12">
@@ -52,13 +54,14 @@
 @code {
     [SupplyParameterFromForm]
     public Department departmentobj { get; set; } = new();
+    private string serverErrorMessage;
 
     protected async Task CreateDepartment()
     {
         try
         {
             var result = DepartmentService.AddAsync(departmentobj);
-            navigation.NavigateTo("/departments-list");
+            navigation.NavigateTo("/departments-list", forceLoad: true);
         }
         catch (Exception ex)
         {
@@ -68,6 +71,10 @@
     }
     public void Cancel()
     {
-        navigation.NavigateTo("/departments-list");
+        navigation.NavigateTo("/departments-list", forceLoad: true);
+    }
+    private void HandleInvalidSubmit(EditContext editContext)
+    {
+        serverErrorMessage = "Please fill in all required fields.";
     }
 }

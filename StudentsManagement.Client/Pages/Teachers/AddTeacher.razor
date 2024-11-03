@@ -1,8 +1,10 @@
 ﻿@page "/add-teacher"
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
 @using StudentsManagement.Shared.Models
 @inject NavigationManager navigation;
 @inject IJSRuntime JSRuntime
-@rendermode InteractiveServer
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
 
 <div class="row">
     <div class="col-12">
@@ -12,9 +14,12 @@
             </div>
             <div class="card-body">
                 <div class="col-md-12">
-                    <EditForm Model="teachobj" OnValidSubmit="CreateTeacher" FormName="addteacher">
+                    <EditForm Model="teachobj" OnValidSubmit="CreateTeacher" FormName="addteacher" OnInvalidSubmit="HandleInvalidSubmit">
                         <DataAnnotationsValidator />
-                        <ValidationSummary />
+                        @if (!string.IsNullOrEmpty(serverErrorMessage))
+                        {
+                            <div class="alert alert-danger">@serverErrorMessage</div>
+                        }
                         <div class="col-md-12">
                             <div class="row">
                                 <div class="col-md-6">
@@ -155,9 +160,12 @@
     List<SystemCodeDetail> Gender = new List<SystemCodeDetail>();
 
     List<SystemCodeDetail> MaritalStatus = new List<SystemCodeDetail>();
+    private EditContext EditContext;
+    private string serverErrorMessage;
 
     protected override async Task OnInitializedAsync()
     {
+        EditContext = new EditContext(teachobj);
         Designations = await SystemCodeDetailService.GetByCodeAsync("Designation");
         Gender = await SystemCodeDetailService.GetByCodeAsync("Gender");
         MaritalStatus = await SystemCodeDetailService.GetByCodeAsync("MaritalStatus");
@@ -167,16 +175,21 @@
     {
         try
         {
+            serverErrorMessage = null;
             var result = await TeacherService.AddAsync(teachobj);
-            navigation.NavigateTo("/teachers-list");
+            navigation.NavigateTo("/teachers-list", forceLoad: true);
         }
         catch (Exception ex)
         {
-            await JSRuntime.InvokeVoidAsync("alert", "Error while saving the teacher: " + ex.Message);
+            serverErrorMessage = ex.Message;
         }
     }
     public void Cancel()
     {
-        navigation.NavigateTo("/teachers-list");
+        navigation.NavigateTo("/teachers-list", forceLoad: true);
+    }
+    private void HandleInvalidSubmit(EditContext editContext)
+    {
+        serverErrorMessage = "Please fill in all required fields.";
     }
 }

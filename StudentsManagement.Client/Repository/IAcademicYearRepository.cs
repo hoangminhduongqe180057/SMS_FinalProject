@@ -9,5 +9,6 @@ namespace StudentsManagement.Client.Repository
         Task<AcademicYears> DeleteAsync(int academicYearsId);
         Task<AcademicYears> GetByIdAsync(int academicYearsId);
         Task<List<AcademicYears>> GetAllAsync();
+        Task<PaginationModel<AcademicYears>> GetPagedAcademicYearsAsync(int pageNumber, int pageSize);
     }
 }

@@ -1,0 +1,60 @@
+﻿@page "/hostel/detail/{id:int}"
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
+@using StudentsManagement.Shared.Models
+@inject NavigationManager navigation;
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@inject IJSRuntime JSRuntime
+
+<h3>View Hostel Detail</h3>
+
+<hr />
+<div class="row">
+    <div class="col-md-12">
+        <table class="table">
+            <tr>
+                <th>Hostel Name</th>
+                <td>@hostelobj.HostelName</td>
+            </tr>
+            <tr>
+                <th>Hostel Address</th>
+                <td>@hostelobj.address</td>
+            </tr>
+            <tr>
+                <th>Hostel Description</th>
+                <td>@hostelobj.Description</td>
+            </tr>
+            <tr>
+                <th>Hostel Type</th>
+                <td>@hostelobj.HostelType?.Description</td>
+            </tr>
+        </table>
+    </div>
+    <div class="form-group">
+        <a class="btn btn-success" href="/hostel/edit/@hostelobj.Id"> Update Hostel </a>
+        <button type="button" @onclick="()=>Cancel()" class="btn btn-danger">Back to list</button>
+    </div>
+</div>
+
+@code {
+    [SupplyParameterFromForm]
+    public Hostel hostelobj { get; set; } = new();
+
+    [Parameter]
+    public int id { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadHostel();
+    }
+
+    private async Task LoadHostel()
+    {
+        hostelobj = await HostelService.GetByIdAsync(id);
+    }
+
+    public void Cancel()
+    {
+        navigation.NavigateTo("/hostels-list", forceLoad: true);
+    }
+}

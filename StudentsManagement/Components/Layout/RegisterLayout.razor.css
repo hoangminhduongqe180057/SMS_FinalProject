@@ -1,0 +1,22 @@
+﻿div.card-registration .form-label,
+div.card-registration .form-control-lg {
+    font-weight: 200;
+    color: #000;
+    opacity: 1;
+}
+
+div.card-registration .select-input.form-control[readonly]:not([disabled]) {
+    font-size: 1rem;
+    line-height: 2.15;
+    padding-left: .75em;
+    padding-right: .75em;
+}
+
+div.card-registration h3 {
+    font-weight: 700;
+    color: #000;
+}
+
+div.card-registration .select-arrow {
+    top: 13px;
+}

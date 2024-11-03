@@ -12,8 +12,9 @@ namespace StudentsManagement.Shared.Models
         public string Name { get; set; }
         public DateTime StartDate { get; set; }
         public DateTime EndDate { get; set; }
-        public int StatusId { get; set; }
-        public SystemCodeDetail Status {  get; set; }
+        // public int Status { get; set; }
+        //public SystemCodeDetail Status {  get; set; }
+        public string Status { get; set; }
         public string Notes { get; set; }
     }
 }

@@ -1,107 +1,92 @@
 ﻿@page "/returnBook/edit/{id:int}"
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
 @using StudentsManagement.Shared.Models
 @inject NavigationManager navigation;
 @inject IJSRuntime JSRuntime
-@rendermode InteractiveServer
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
 
 <h3>Return Book</h3>
 
 <hr />
 <div class="row">
     <div class="col-md-12">
-        <EditForm Model="bookobj" OnValidSubmit="ReturnBookIssuance" FormName="returnbookissuance">
+        <EditForm Model="bookobj" OnValidSubmit="ReturnBookIssuance" FormName="returnbookissuance" OnInvalidSubmit="HandleInvalidSubmit">
             <DataAnnotationsValidator />
             <ValidationSummary />
             <div class="col-md-12">
                 <div class="row">
+                    <!-- Issue Date (View-Only) -->
                     <div class="col-md-6">
                         <div class="form-group">
                             <label class="control-label">Issue Date</label>
-                            <InputDate for="IssueDate" class="form-control" @bind-Value="@bookobj.IssueDate" readonly />
-                            <ValidationMessage For="()=>bookobj.IssueDate" />
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label class="control-label">Due Date</label>
-                            <InputDate for="DueDate" class="form-control" @bind-Value="@bookobj.DueDate" readonly />
-                            <ValidationMessage For="()=>bookobj.DueDate" />
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label class="control-label">Return Date</label>
-                            <InputDate for="ReturnDate" class="form-control" @bind-Value="@bookobj.ReturnDate" />
-                            <ValidationMessage For="()=>bookobj.ReturnDate" />
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label class="control-label">Class Name</label>
-                            <InputSelect for="ClassId" class="form-control" @bind-Value="@bookobj.ClassId" readonly>
-                                <option value="">Select Class</option>
-                                @if (Class != null && Class.Any())
-                                {
-                                    @foreach (var item in Class)
-                                    {
-                                        <option value="@item.Id">@item.Description</option>
-                                    }
-                                }
-                            </InputSelect>
-                            <ValidationMessage For="()=>bookobj.ClassId" />
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label class="control-label">Student Name</label>
-                            <InputSelect for="StudentId" class="form-control" @bind-Value="@bookobj.StudentId" readonly>
-                                <option value="">Select Student</option>
-                                @if (Students != null && Students.Any())
-                                {
-                                    @foreach (var student in Students)
-                                    {
-                                        <option value="@student.Id">@student.FullName</option>
-                                    }
-                                }
-                            </InputSelect>
-                            <ValidationMessage For="()=>bookobj.StudentId" />
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label class="control-label">Book Name</label>
-                            <InputSelect for="BookId" class="form-control" @bind-Value="@bookobj.BookId" readonly>
-                                <option value="">Select Class</option>
-                                @if (Books != null && Books.Any())
-                                {
-                                    @foreach (var book in Books)
-                                    {
-                                        <option value="@book.Id">@book.Name</option>
-                                    }
-                                }
-                            </InputSelect>
-                            <ValidationMessage For="()=>bookobj.BookId" />
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label class="control-label">Creator</label>
-                            <InputText for="CreatedById" class="form-control" @bind-Value="@bookobj.CreatedById" readonly />
-                            <ValidationMessage For="()=>bookobj.CreatedById" />
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label class="control-label">Notes</label>
-                            <InputText for="Notes" class="form-control" @bind-Value="@bookobj.Notes" />
-                            <ValidationMessage For="()=>bookobj.Notes" />
+                            <input type="date" class="form-control" value="@bookobj.IssueDate.ToString("yyyy-MM-dd")" readonly />
                         </div>
                     </div>
 
+                    <!-- Due Date (View-Only) -->
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="control-label">Due Date</label>
+                            <input type="date" class="form-control" value="@bookobj.DueDate.ToString("yyyy-MM-dd")" readonly />
+                        </div>
+                    </div>
+
+                    <!-- Return Date (Editable) -->
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="control-label">Return Date</label>
+                            <InputDate @bind-Value="bookobj.ReturnDate" class="form-control" />
+                            <ValidationMessage For="()=>bookobj.ReturnDate" />
+                        </div>
+                    </div>
+
+                    <!-- Student's Class (View-Only) -->
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="control-label">Student's Class</label>
+                            <input type="text" class="form-control" value="@(Classes.FirstOrDefault(c => c.Id == SelectedClassId)?.Description)" readonly />
+                        </div>
+                    </div>
+
+                    <!-- Student (View-Only) -->
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="control-label">Student</label>
+                            <input type="text" class="form-control" value="@(FilteredStudents.FirstOrDefault(s => s.Id == bookobj.StudentId)?.FullName)" readonly />
+                        </div>
+                    </div>
+
+                    <!-- Book Name (View-Only) -->
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="control-label">Book Name</label>
+                            <input type="text" class="form-control" value="@(Books.FirstOrDefault(b => b.Id == bookobj.BookId)?.Name)" readonly />
+                        </div>
+                    </div>
+
+                    <!-- Creator (View-Only) -->
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="control-label">Creator</label>
+                            <input type="text" class="form-control" value="@bookobj.CreatedById" readonly />
+                        </div>
+                    </div>
+
+                    <!-- Notes (Editable) -->
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="control-label">Notes</label>
+                            <InputText @bind-Value="bookobj.Notes" class="form-control" />
+                            <ValidationMessage For="()=>bookobj.Notes" />
+                        </div>
+                    </div>
                 </div>
+
+                <!-- Form Buttons -->
                 <div class="form-group mt-4">
                     <button type="submit" class="btn btn-primary">Save Return Book</button>
-                    <button type="button" @onclick="()=>Cancel()" class="btn btn-danger">Back to List</button>
+                    <button type="button" @onclick="Cancel" class="btn btn-danger">Back to List</button>
                 </div>
             </div>
         </EditForm>
@@ -111,9 +96,22 @@
 @code {
     [SupplyParameterFromForm]
     public BookIssuance bookobj { get; set; } = new();
-    List<SystemCodeDetail> Class = new List<SystemCodeDetail>();
     List<Book> Books = new List<Book>();
+    List<SystemCodeDetail> Classes = new List<SystemCodeDetail>();
+    List<Student> FilteredStudents = new List<Student>();
     List<Student> Students = new List<Student>();
+    private int? selectedClassId;
+    private string serverErrorMessage;
+
+    public int? SelectedClassId
+    {
+        get => selectedClassId;
+        set
+        {
+            selectedClassId = value;
+            OnClassChanged(selectedClassId);
+        }
+    }
 
     [Parameter]
     public int id { get; set; }
@@ -121,14 +119,29 @@
     protected override async Task OnInitializedAsync()
     {
         await LoadBookIssuance();
-        Class = await SystemCodeDetailService.GetByCodeAsync("Class");
         Books = await BookService.GetAllAsync();
+        Classes = await SystemCodeDetailService.GetByCodeAsync("Class");
         Students = await StudentService.GetAllStudentsAsync();
+        FilteredStudents = Students;
+    }
+
+    private void OnClassChanged(int? selectedClassId)
+    {
+        if (selectedClassId.HasValue)
+        {
+            FilteredStudents = Students.Where(s => s.ClassId == selectedClassId.Value).ToList();
+        }
+        else
+        {
+            FilteredStudents = Students;
+        }
+        InvokeAsync(StateHasChanged);
     }
 
     private async Task LoadBookIssuance()
     {
         bookobj = await BookIssuanceService.GetByIdAsync(id);
+        selectedClassId = bookobj.ClassId;
     }
 
     protected async Task ReturnBookIssuance()
@@ -136,7 +149,7 @@
         try
         {
             var result = await BookIssuanceService.ReturnBookUpdateAsync(bookobj);
-            navigation.NavigateTo("/bookIssuances-list");
+            navigation.NavigateTo("/bookIssuances-list", forceLoad: true);
         }
         catch (Exception ex)
         {
@@ -146,6 +159,10 @@
 
     public void Cancel()
     {
-        navigation.NavigateTo("/bookIssuances-list");
+        navigation.NavigateTo("/bookIssuances-list", forceLoad: true);
+    }
+    private void HandleInvalidSubmit(EditContext editContext)
+    {
+        serverErrorMessage = "Please fill in all required fields.";
     }
 }

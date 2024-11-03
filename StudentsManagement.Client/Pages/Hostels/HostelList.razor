@@ -1,0 +1,144 @@
+﻿@page "/hostels-list"
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize(Roles = "System, Hostel")]
+@using StudentsManagement.Shared.Models
+@inject NavigationManager navigation;
+@inject IJSRuntime JsRuntime
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Hostels List</h3>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <p><a class="btn btn-success float-end" href="/add-hostel">Add New Hostel</a></p>
+                    <div class="col-md-12">
+                        <div class="card">
+                            <div class="card-header"></div>
+                            @if (hostel == null)
+                            {
+                                <p><em>Loading Academic Years...</em></p>
+                            }
+                            else if (!hostel.Items.Any())
+                            {
+                                <div class="alert alert-info"> There is no Hostel List Available</div>
+                            }
+                            else
+                            {
+                                <div class="card-body">
+                                    <table class="table table-striped table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th>Id</th>
+                                                <th>Hostel Name</th>
+                                                <th>Hostel Address</th>
+                                                <th>Hostel Type</th>
+                                                <th>Hostel Description</th>
+                                                <th>View</th>
+                                                <th>Edit</th>
+                                                <th>Delete</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach (var hostel in hostel.Items)
+                                            {
+                                                <tr>
+                                                    <td>@hostel.Id</td>
+                                                    <td>@hostel.HostelName</td>
+                                                    <td>@hostel.address</td>
+                                                    <td>@hostel.HostelType?.Description</td>
+                                                    <td>@hostel.Description</td>
+                                                    <td>
+                                                        <a class="btn btn-primary" href="/hostel/detail/@hostel.Id"> View </a>
+                                                    </td>
+                                                    <td>
+                                                        <a class="btn btn-success" href="/hostel/edit/@hostel.Id"> Edit </a>
+                                                    </td>
+                                                    <td>
+                                                        <a class="btn btn-danger" @onclick="() => ConfirmDelete(hostel.Id)"> Delete </a>
+                                                    </td>
+                                                </tr>
+                                            }
+                                        </tbody>
+                                    </table>
+                                    <!-- Pagination Controls -->
+                                    <div class="button-group mt-3">
+                                        <button class="btn btn-custom" @onclick="PreviousPage" style="@GetButtonStyle(!CanGoToPreviousPage)">Previous</button>
+                                        <button class="btn btn-custom ms-2" @onclick="NextPage" style="@GetButtonStyle(!CanGoToNextPage)">Next</button>
+                                    </div>
+                                    <p class="mt-2">Page @hostel.CurrentPage of @hostel.TotalPages</p>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private PaginationModel<Hostel>? hostel;
+    private int currentPage = 1;
+    private int pageSize = 10;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadPagedHostels(currentPage);
+    }
+
+    private async Task LoadPagedHostels(int page)
+    {
+        hostel = await HostelService.GetPagedHostelsAsync(page, pageSize);
+    }
+
+    private async Task NextPage()
+    {
+        if (CanGoToNextPage)
+        {
+            currentPage++;
+            await LoadPagedHostels(currentPage);
+        }
+    }
+
+    private async Task PreviousPage()
+    {
+        if (CanGoToPreviousPage)
+        {
+            currentPage--;
+            await LoadPagedHostels(currentPage);
+        }
+    }
+
+    private string GetButtonStyle(bool isInactive)
+    {
+        return isInactive ? "opacity: 0.6; pointer-events: none;" : "";
+    }
+
+    private bool CanGoToPreviousPage => hostel?.CurrentPage > 1;
+    private bool CanGoToNextPage => hostel?.CurrentPage < hostel?.TotalPages;
+
+    private async Task DeleteHostel(int id)
+    {
+        var hostel = await HostelService.GetByIdAsync(id);
+        bool result = hostel != null;
+        if (result)
+        {
+            await LoadPagedHostels(currentPage);
+        }
+    }
+
+    private async Task ConfirmDelete(int id)
+    {
+        bool confirm = await JsRuntime.InvokeAsync<bool>("confirm", $"Are you sure you want to delete?");
+        if (confirm)
+        {
+            await DeleteHostel(id);
+        }
+    }
+
+
+}

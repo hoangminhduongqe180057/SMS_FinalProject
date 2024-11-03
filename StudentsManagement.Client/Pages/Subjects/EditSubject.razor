@@ -1,8 +1,10 @@
 ﻿@page "/subject/edit/{id:int}"
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
 @using StudentsManagement.Shared.Models
 @inject NavigationManager navigation;
 @inject IJSRuntime JsRuntime
-@rendermode InteractiveServer
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
 
 <div class="row">
     <div class="col-12">
@@ -11,7 +13,7 @@
                 <h3 class="card-title">Update Subject Details</h3>
             </div>
             <div class="card-body">
-                <EditForm Model="subjectobj" OnValidSubmit="UpdateUpdateSubject" FormName="updateCountry">
+                <EditForm Model="subjectobj" OnValidSubmit="UpdateUpdateSubject" FormName="updateCountry" OnInvalidSubmit="HandleInvalidSubmit">
                     <DataAnnotationsValidator />
                     <ValidationSummary />
                     <div class="col-md-12">
@@ -52,7 +54,7 @@
 
     [SupplyParameterFromForm]
     public Subject subjectobj { get; set; } = new();
-
+    private string serverErrorMessage;
 
     [Parameter]
     public int id { get; set; }
@@ -73,7 +75,8 @@
         try
         {
             var result = SubjectService.UpdateAsync(subjectobj);
-            navigation.NavigateTo("/subjects-list");
+            StateHasChanged();
+            navigation.NavigateTo("/subjects-list", forceLoad: true);
         }
         catch (Exception ex)
         {
@@ -83,6 +86,10 @@
     }
     public void Cancel()
     {
-        navigation.NavigateTo("/subjects-list");
+        navigation.NavigateTo("/subjects-list", forceLoad: true);
+    }
+    private void HandleInvalidSubmit(EditContext editContext)
+    {
+        serverErrorMessage = "Please fill in all required fields.";
     }
 }

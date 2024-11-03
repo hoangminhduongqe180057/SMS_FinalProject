@@ -52,5 +52,22 @@ namespace StudentsManagement.Services
             await _context.SaveChangesAsync();
             return newSystemCode;
         }
+
+        public async Task<PaginationModel<SystemCode>> GetPagedSystemCodesAsync(int pageNumber, int pageSize)
+        {
+            var totalItems = await _context.SystemCodes.CountAsync();
+            var systemcodes = await _context.SystemCodes
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            return new PaginationModel<SystemCode>
+            {
+                Items = systemcodes,
+                TotalItems = totalItems,
+                CurrentPage = pageNumber,
+                PageSize = pageSize
+            };
+        }
     }
 }

@@ -9,5 +9,6 @@ namespace StudentsManagement.Client.Repository
         Task<SystemCode> DeleteAsync(int countryId);
         Task<SystemCode> GetByIdAsync(int countryId);
         Task<List<SystemCode>> GetAllAsync();
+        Task<PaginationModel<SystemCode>> GetPagedSystemCodesAsync(int pageNumber, int pageSize);
     }
 }

@@ -13,11 +13,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "D:\\CHUYÊN NGÀNH 5\\SWP391 - Software Project\\StudentsManagement\\StudentsManagement.Shared\\StudentsManagement.Shared.csproj",
+      "projectUniqueName": "D:\\CHUYÊN NGÀNH 5\\Loại bỏ roleId\\StudentsManagement\\StudentsManagement.Shared\\StudentsManagement.Shared.csproj",
       "projectName": "StudentsManagement.Shared",
-      "projectPath": "D:\\CHUYÊN NGÀNH 5\\SWP391 - Software Project\\StudentsManagement\\StudentsManagement.Shared\\StudentsManagement.Shared.csproj",
+      "projectPath": "D:\\CHUYÊN NGÀNH 5\\Loại bỏ roleId\\StudentsManagement\\StudentsManagement.Shared\\StudentsManagement.Shared.csproj",
       "packagesPath": "C:\\Users\\DELL\\.nuget\\packages\\",
-      "outputPath": "D:\\CHUYÊN NGÀNH 5\\SWP391 - Software Project\\StudentsManagement\\StudentsManagement.Shared\\obj\\",
+      "outputPath": "D:\\CHUYÊN NGÀNH 5\\Loại bỏ roleId\\StudentsManagement\\StudentsManagement.Shared\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "C:\\Users\\DELL\\AppData\\Roaming\\NuGet\\NuGet.Config",

@@ -1,8 +1,10 @@
 ﻿@page "/add-subject"
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
 @using StudentsManagement.Shared.Models
 @inject NavigationManager navigation;
 @inject IJSRuntime JSRuntime
-@rendermode InteractiveServer
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
 
 <div class="row">
     <div class="col-12">
@@ -11,7 +13,7 @@
                 <h3 class="card-title">Add New Subject</h3>
             </div>
             <div class="card-body">
-                <EditForm Model="subjectobj" OnValidSubmit="CreateSubject" FormName="addSubject">
+                <EditForm Model="subjectobj" OnValidSubmit="CreateSubject" FormName="addSubject" OnInvalidSubmit="HandleInvalidSubmit">
                     <DataAnnotationsValidator />
                     <ValidationSummary />
                     <div class="col-md-12">
@@ -52,13 +54,14 @@
 @code {
     [SupplyParameterFromForm]
     public Subject subjectobj { get; set; } = new();
+    private string serverErrorMessage;
 
     protected async Task CreateSubject()
     {
         try
         {
             var result = SubjectService.AddAsync(subjectobj);
-            navigation.NavigateTo("/subjects-list");
+            navigation.NavigateTo("/subjects-list", forceLoad: true);
         }
         catch (Exception ex)
         {
@@ -68,6 +71,10 @@
     }
     public void Cancel()
     {
-        navigation.NavigateTo("/subjects-list");
+        navigation.NavigateTo("/subjects-list", forceLoad: true);
+    }
+    private void HandleInvalidSubmit(EditContext editContext)
+    {
+        serverErrorMessage = "Please fill in all required fields.";
     }
 }

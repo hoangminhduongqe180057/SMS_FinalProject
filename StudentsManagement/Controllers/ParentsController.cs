@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using StudentsManagement.Client.Repository;
 using StudentsManagement.Data;
 using StudentsManagement.Shared.Models;
 
@@ -15,10 +16,12 @@ namespace StudentsManagement.Controllers
     public class ParentsController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
+        private readonly IParentRepository _parentRepository;
 
-        public ParentsController(ApplicationDbContext context)
+        public ParentsController(ApplicationDbContext context, IParentRepository parentRepository)
         {
             _context = context;
+            _parentRepository = parentRepository;
         }
 
         // GET: api/Parents
@@ -103,6 +106,70 @@ namespace StudentsManagement.Controllers
         private bool ParentExists(int id)
         {
             return _context.Parents.Any(e => e.Id == id);
+        }
+
+        [HttpGet("Search")]
+        public async Task<ActionResult<List<Parent>>> SearchParentsAsync(
+            [FromQuery] string name,
+            [FromQuery] string email,
+            [FromQuery] string phoneNumber,
+            [FromQuery] string studentName,
+            [FromQuery] string classes)
+        {
+            var query = _context.Parents
+                .Include(x => x.Student)
+                .Include(s => s.Gender)
+                .Include(p => p.ParentType)
+                .Include(c => c.Class)
+                .AsQueryable();
+
+            // Apply filters
+
+            if (!string.IsNullOrWhiteSpace(name))
+                query = query.Where(s => (s.FirstName + " " + (s.MiddleName ?? "") + " " + s.LastName).Trim().Contains(name));
+
+            if (!string.IsNullOrWhiteSpace(email))
+                query = query.Where(s => s.EmailAddress.Contains(email));
+
+            if (!string.IsNullOrWhiteSpace(phoneNumber))
+                query = query.Where(s => s.PhoneNumber.Contains(phoneNumber));
+
+            if (!string.IsNullOrWhiteSpace(studentName))
+            {
+                query = query.Where(s =>
+                    (s.Student.FirstName + " " + s.Student.LastName)
+                    .Trim().Contains(studentName));
+            }
+
+            if (!string.IsNullOrWhiteSpace(classes))
+                query = query.Where(s => s.Class.Description.Contains(classes));
+
+            var teachers = await query.ToListAsync();
+            return Ok(teachers);
+        }
+
+        [HttpGet("paged")]
+        public async Task<ActionResult<PaginationModel<Teacher>>> GetPagedTeachersAsync(
+            [FromQuery] int pageNumber, [FromQuery] int pageSize,
+            [FromQuery] string? id, [FromQuery] string? name,
+            [FromQuery] string? email, [FromQuery] string? phoneNumber,
+            [FromQuery] string? studentName, [FromQuery] string? classes,
+            [FromQuery] string? sortField,
+            [FromQuery] bool sortAscending = true)
+        {
+            var searchParameters = new SearchParameters
+            {
+                Name = name,
+                Email = email,
+                PhoneNumber = phoneNumber,
+                StudentName = studentName,
+                Class = classes,
+                SortField = sortField,
+                SortAscending = sortAscending
+            };
+
+            var result = await _parentRepository.GetPagedParentsAsync(pageNumber, pageSize, searchParameters);
+            return Ok(result);
         }
     }
 }

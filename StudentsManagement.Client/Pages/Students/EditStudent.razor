@@ -1,17 +1,22 @@
 ﻿@page "/student/edit/{id:int}"
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
 @using StudentsManagement.Shared.Models
 @inject NavigationManager navigation;
 @inject IJSRuntime JSRuntime
-@rendermode InteractiveServer
-
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
 <h3>Update Student Detail</h3>
 
 <hr />
 <div class="row">
     <div class="col-md-12">
-        <EditForm Model="studobj" OnValidSubmit="UpdateStudent" FormName="updatestudent">
+        <EditForm Model="studobj" OnValidSubmit="UpdateStudent" FormName="updatestudent" OnInvalidSubmit="HandleInvalidSubmit">
             <DataAnnotationsValidator />
-            <ValidationSummary />
+            <!-- Display server-side validation error message -->
+            @if (!string.IsNullOrEmpty(serverErrorMessage))
+            {
+                <div class="alert alert-danger">@serverErrorMessage</div>
+            }
             <div class="col-md-12">
                 <div class="row">
                     <div class="col-md-6">
@@ -35,6 +40,23 @@
                             <label class="control-label">Last Name</label>
                             <InputText for="LastName" class="form-control" @bind-Value="@studobj.LastName" />
                             <ValidationMessage For="()=>studobj.LastName" />
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="control-label">Class</label>
+                            <InputSelect for="Class" class="form-control" @bind-Value="@studobj.ClassId">
+                                <option value="">Select Class</option>
+                                @if (Class != null && Class.Any())
+                                {
+                                    @foreach (var c in Class)
+                                    {
+                                        <option value="@c.Id">@c.Description</option>
+                                    }
+                                }
+                            </InputSelect>
+                            <ValidationMessage For="()=>studobj.ClassId" />
                         </div>
                     </div>
 
@@ -103,7 +125,7 @@
 
                 </div>
                 <div class="form-group mt-4">
-                    <button type="submit" class="btn btn-primary">Update Student</button>
+                    <button type="submit" class="btn btn-primary">Save Student</button>
                     <button type="button" @onclick="()=>Cancel()" class="btn btn-danger">Back to list</button>
                 </div>
             </div>
@@ -116,6 +138,9 @@
     public Student studobj { get; set; } = new();
     List<Country> Countries = new List<Country>();
     List<SystemCodeDetail> Gender = new List<SystemCodeDetail>();
+    List<SystemCodeDetail> Class = new List<SystemCodeDetail>();
+    private EditContext EditContext;
+    private string serverErrorMessage;
 
     [Parameter]
     public int id { get; set; }
@@ -123,8 +148,10 @@
     protected override async Task OnInitializedAsync()
     {
         await LoadStudent();
+        EditContext = new EditContext(studobj);
         Countries = await CountryService.GetAllAsync();
         Gender = await SystemCodeDetailService.GetByCodeAsync("Gender");
+        Class = await SystemCodeDetailService.GetByCodeAsync("Class");
     }
 
     private async Task LoadStudent()
@@ -136,17 +163,23 @@
     {
         try
         {
+            serverErrorMessage = null;
             var result = await StudentService.UpdateStudentAsync(studobj);
-            navigation.NavigateTo("/students-list");
+            navigation.NavigateTo("/students-list", forceLoad: true);
         }
-        catch(Exception ex)
+        catch (Exception ex)
         {
-            await JSRuntime.InvokeVoidAsync("alert", "Error while updating the student: " + ex.Message);
+            serverErrorMessage = ex.Message;
+          //  await JSRuntime.InvokeVoidAsync("alert", "Error while updating the student: " + ex.Message);
         }
     }
 
     public void Cancel()
     {
-        navigation.NavigateTo("/students-list");
+        navigation.NavigateTo("/students-list", forceLoad: true);
+    }
+    private void HandleInvalidSubmit(EditContext editContext)
+    {
+        serverErrorMessage = "Please fill in all required fields.";
     }
 }

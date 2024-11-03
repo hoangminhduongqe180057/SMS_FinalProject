@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using StudentsManagement.Client.Repository;
 using StudentsManagement.Data;
 using StudentsManagement.Shared.Models;
 
@@ -15,10 +16,12 @@ namespace StudentsManagement.Controllers
     public class SubjectsController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
+        private readonly ISubjectRepository _subjectRepository;
 
-        public SubjectsController(ApplicationDbContext context)
+        public SubjectsController(ApplicationDbContext context, ISubjectRepository subjectRepository)
         {
             _context = context;
+            _subjectRepository = subjectRepository;
         }
 
         // GET: api/Subjects
@@ -103,6 +106,44 @@ namespace StudentsManagement.Controllers
         private bool SubjectExists(int id)
         {
             return _context.Subjects.Any(e => e.Id == id);
+        }
+
+        [HttpGet("Search")]
+        public async Task<ActionResult<List<Subject>>> SearchSubjectsAsync(
+            [FromQuery] string name)
+        {
+            var query = _context.Subjects.AsQueryable();
+
+            // Apply filters
+
+            if (!string.IsNullOrWhiteSpace(name))
+                query = query.Where(s => (s.Name).Trim().Contains(name));
+
+            var subjects = await query.ToListAsync();
+            return Ok(subjects);
+        }
+
+        [HttpGet("paged")]
+        public async Task<ActionResult<PaginationModel<Subject>>> GetPagedSubjectsAsync(
+            [FromQuery] int pageNumber, [FromQuery] int pageSize,
+            [FromQuery] string? id, [FromQuery] string? name,
+            [FromQuery] string? description, [FromQuery] string? createBy,
+            [FromQuery] DateTime createOn,
+            [FromQuery] string? sortField,
+            [FromQuery] bool sortAscending = true)
+        {
+            var searchParameters = new SearchParameters
+            {
+                Name = name,
+                Description = description,
+                CreateBy = createBy,
+                CreateOn = createOn,
+                SortField = sortField,
+                SortAscending = sortAscending
+            };
+
+            var result = await _subjectRepository.GetPagedSubjectsAsync(pageNumber, pageSize, searchParameters);
+            return Ok(result);
         }
     }
 }

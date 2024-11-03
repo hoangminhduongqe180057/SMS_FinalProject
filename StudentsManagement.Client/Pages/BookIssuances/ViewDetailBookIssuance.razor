@@ -1,0 +1,77 @@
+﻿@page "/bookIssuance/detail/{id:int}"
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
+@using StudentsManagement.Shared.Models
+@inject NavigationManager navigation;
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+
+<h3>View Book Issuance Detail</h3>
+
+<hr />
+<div class="row">
+    <div class="col-md-12">
+        <table class="table">
+            <tr>
+                <th>Issue Date</th>
+                <td>@bookobj.IssueDate</td>
+            </tr>
+            <tr>
+                <th>Due Date</th>
+                <td>@bookobj.DueDate</td>
+            </tr>
+            <tr>
+                <th>Class Name</th>
+                <td>@bookobj.Class?.Description</td>
+            </tr>
+            <tr>
+                <th>Student Name</th>
+                <td>@bookobj.Student?.FullName</td>
+            </tr>
+            <tr>
+                <th>Book Name</th>
+                <td>@bookobj.Book?.Name</td>
+            </tr>
+            <tr>
+                <th>Notes</th>
+                <td>@bookobj.Notes</td>
+            </tr>
+            <tr>
+                <th>Status</th>
+                <td class="text-warning">@bookobj.Status?.Code</td>
+            </tr>
+        </table>
+    </div>
+    <div class="form-group">
+        <a class="btn btn-success" href="/bookIssuance/edit/@bookobj.Id"> Update Book Issuance </a>
+        <button type="button" @onclick="()=>Cancel()" class="btn btn-danger">Back to list</button>
+    </div>
+</div>
+
+@code {
+    [SupplyParameterFromForm]
+    public BookIssuance bookobj { get; set; } = new();
+
+    [Parameter]
+    public int id { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadBook();
+    }
+
+    private async Task LoadBook()
+    {
+        bookobj = await BookIssuanceService.GetByIdAsync(id);
+    }
+
+    protected async Task Delete()
+    {
+        var result = await BookIssuanceService.DeleteAsync(id);
+        navigation.NavigateTo("/returnedBooks-list", forceLoad: true);
+    }
+
+    public void Cancel()
+    {
+        navigation.NavigateTo("/bookIssuances-list", forceLoad: true);
+    }
+}

@@ -1,15 +1,17 @@
 ﻿@page "/bookIssuance/edit/{id:int}"
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
 @using StudentsManagement.Shared.Models
 @inject NavigationManager navigation;
 @inject IJSRuntime JSRuntime
-@rendermode InteractiveServer
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
 
 <h3>Update Book Issuance Detail</h3>
 
 <hr />
 <div class="row">
     <div class="col-md-12">
-        <EditForm Model="bookobj" OnValidSubmit="UpdateBookIssuance" FormName="updatebookissuance">
+        <EditForm Model="bookobj" OnValidSubmit="UpdateBookIssuance" FormName="updatebookissuance" OnInvalidSubmit="HandleInvalidSubmit">
             <DataAnnotationsValidator />
             <ValidationSummary />
             <div class="col-md-12">
@@ -30,31 +32,25 @@
                     </div>
                     <div class="col-md-6">
                         <div class="form-group">
-                            <label class="control-label">Class Name</label>
-                            <InputSelect for="ClassId" class="form-control" @bind-Value="@bookobj.ClassId">
+                            <label class="control-label">Student's Class</label>
+                            <InputSelect class="form-control" @bind-Value="SelectedClassId">
                                 <option value="">Select Class</option>
-                                @if (Class != null && Class.Any())
+                                @foreach (var classItem in Classes)
                                 {
-                                    @foreach (var item in Class)
-                                    {
-                                        <option value="@item.Id">@item.Description</option>
-                                    }
+                                    <option value="@classItem.Id">@classItem.Description</option>
                                 }
                             </InputSelect>
-                            <ValidationMessage For="()=>bookobj.ClassId" />
+                            <ValidationMessage For="()=>SelectedClassId" />
                         </div>
                     </div>
                     <div class="col-md-6">
                         <div class="form-group">
-                            <label class="control-label">Student Name</label>
-                            <InputSelect for="StudentId" class="form-control" @bind-Value="@bookobj.StudentId">
+                            <label class="control-label">Student</label>
+                            <InputSelect class="form-control" @bind-Value="@bookobj.StudentId">
                                 <option value="">Select Student</option>
-                                @if (Students != null && Students.Any())
+                                @foreach (var student in FilteredStudents)
                                 {
-                                    @foreach (var student in Students)
-                                    {
-                                        <option value="@student.Id">@student.FullName</option>
-                                    }
+                                    <option value="@student.Id">@student.FullName</option>
                                 }
                             </InputSelect>
                             <ValidationMessage For="()=>bookobj.StudentId" />
@@ -104,9 +100,23 @@
 @code {
     [SupplyParameterFromForm]
     public BookIssuance bookobj { get; set; } = new();
-    List<SystemCodeDetail> Class = new List<SystemCodeDetail>();
     List<Book> Books = new List<Book>();
-    List<Student> Students = new List<Student>();
+    List<SystemCodeDetail> Classes = new List<SystemCodeDetail>();
+    List<Student> FilteredStudents = new List<Student>(); // This will be displayed in the dropdown
+    List<Student> Students = new List<Student>(); // All students
+    private int? selectedClassId;
+    private string serverErrorMessage;
+
+    // Property for the selected class
+    public int? SelectedClassId
+    {
+        get => selectedClassId;
+        set
+        {
+            selectedClassId = value;
+            OnClassChanged(selectedClassId);  // Call the filtering logic when the class changes
+        }
+    }
 
     [Parameter]
     public int id { get; set; }
@@ -114,9 +124,31 @@
     protected override async Task OnInitializedAsync()
     {
         await LoadBookIssuance();
-        Class = await SystemCodeDetailService.GetByCodeAsync("Class");
         Books = await BookService.GetAllAsync();
+        Classes = await SystemCodeDetailService.GetByCodeAsync("Class");
         Students = await StudentService.GetAllStudentsAsync();
+
+        // Initialize with all students by default
+        FilteredStudents = Students;
+        Books = await BookService.GetAllAsync();
+    }
+
+    private void OnClassChanged(int? selectedClassId)
+    {
+        if (selectedClassId.HasValue)
+        {
+            // Ensure filtering happens when a class is selected
+            FilteredStudents = Students.Where(s => s.ClassId == selectedClassId.Value).ToList();
+            Console.WriteLine($"Filtered Students Count: {FilteredStudents.Count}");
+        }
+        else
+        {
+            // If no class is selected, show all students
+            FilteredStudents = Students;
+        }
+
+        // Trigger UI refresh
+        InvokeAsync(StateHasChanged);
     }
 
     private async Task LoadBookIssuance()
@@ -126,10 +158,11 @@
 
     protected async Task UpdateBookIssuance()
     {
+        bookobj.ClassId = selectedClassId.Value;
         try
         {
             var result = await BookIssuanceService.UpdateAsync(bookobj);
-            navigation.NavigateTo("/bookIssuances-list");
+            navigation.NavigateTo("/bookIssuances-list", forceLoad: true);
         }
         catch (Exception ex)
         {
@@ -139,6 +172,10 @@
 
     public void Cancel()
     {
-        navigation.NavigateTo("/bookIssuances-list");
+        navigation.NavigateTo("/bookIssuances-list", forceLoad: true);
+    }
+    private void HandleInvalidSubmit(EditContext editContext)
+    {
+        serverErrorMessage = "Please fill in all required fields.";
     }
 }

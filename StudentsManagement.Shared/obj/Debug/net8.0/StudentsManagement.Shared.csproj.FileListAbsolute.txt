@@ -22,3 +22,27 @@ D:\CHUYÊN NGÀNH 5\SWP391 - Software Project\StudentsManagement\StudentsManagem
 D:\CHUYÊN NGÀNH 5\SWP391 - Software Project\StudentsManagement\StudentsManagement.Shared\obj\Debug\net8.0\refint\StudentsManagement.Shared.dll
 D:\CHUYÊN NGÀNH 5\SWP391 - Software Project\StudentsManagement\StudentsManagement.Shared\obj\Debug\net8.0\StudentsManagement.Shared.pdb
 D:\CHUYÊN NGÀNH 5\SWP391 - Software Project\StudentsManagement\StudentsManagement.Shared\obj\Debug\net8.0\ref\StudentsManagement.Shared.dll
+D:\CHUYÊN NGÀNH 5\StudentsManagement\StudentsManagement.Shared\bin\Debug\net8.0\StudentsManagement.Shared.deps.json
+D:\CHUYÊN NGÀNH 5\StudentsManagement\StudentsManagement.Shared\bin\Debug\net8.0\StudentsManagement.Shared.dll
+D:\CHUYÊN NGÀNH 5\StudentsManagement\StudentsManagement.Shared\bin\Debug\net8.0\StudentsManagement.Shared.pdb
+D:\CHUYÊN NGÀNH 5\StudentsManagement\StudentsManagement.Shared\obj\Debug\net8.0\StudentsManagement.Shared.GeneratedMSBuildEditorConfig.editorconfig
+D:\CHUYÊN NGÀNH 5\StudentsManagement\StudentsManagement.Shared\obj\Debug\net8.0\StudentsManagement.Shared.AssemblyInfoInputs.cache
+D:\CHUYÊN NGÀNH 5\StudentsManagement\StudentsManagement.Shared\obj\Debug\net8.0\StudentsManagement.Shared.AssemblyInfo.cs
+D:\CHUYÊN NGÀNH 5\StudentsManagement\StudentsManagement.Shared\obj\Debug\net8.0\StudentsManagement.Shared.csproj.CoreCompileInputs.cache
+D:\CHUYÊN NGÀNH 5\StudentsManagement\StudentsManagement.Shared\obj\Debug\net8.0\StudentsManagement.Shared.sourcelink.json
+D:\CHUYÊN NGÀNH 5\StudentsManagement\StudentsManagement.Shared\obj\Debug\net8.0\StudentsManagement.Shared.dll
+D:\CHUYÊN NGÀNH 5\StudentsManagement\StudentsManagement.Shared\obj\Debug\net8.0\refint\StudentsManagement.Shared.dll
+D:\CHUYÊN NGÀNH 5\StudentsManagement\StudentsManagement.Shared\obj\Debug\net8.0\StudentsManagement.Shared.pdb
+D:\CHUYÊN NGÀNH 5\StudentsManagement\StudentsManagement.Shared\obj\Debug\net8.0\ref\StudentsManagement.Shared.dll
+D:\CHUYÊN NGÀNH 5\Loại bỏ roleId\StudentsManagement\StudentsManagement.Shared\bin\Debug\net8.0\StudentsManagement.Shared.deps.json
+D:\CHUYÊN NGÀNH 5\Loại bỏ roleId\StudentsManagement\StudentsManagement.Shared\bin\Debug\net8.0\StudentsManagement.Shared.dll
+D:\CHUYÊN NGÀNH 5\Loại bỏ roleId\StudentsManagement\StudentsManagement.Shared\bin\Debug\net8.0\StudentsManagement.Shared.pdb
+D:\CHUYÊN NGÀNH 5\Loại bỏ roleId\StudentsManagement\StudentsManagement.Shared\obj\Debug\net8.0\StudentsManagement.Shared.GeneratedMSBuildEditorConfig.editorconfig
+D:\CHUYÊN NGÀNH 5\Loại bỏ roleId\StudentsManagement\StudentsManagement.Shared\obj\Debug\net8.0\StudentsManagement.Shared.AssemblyInfoInputs.cache
+D:\CHUYÊN NGÀNH 5\Loại bỏ roleId\StudentsManagement\StudentsManagement.Shared\obj\Debug\net8.0\StudentsManagement.Shared.AssemblyInfo.cs
+D:\CHUYÊN NGÀNH 5\Loại bỏ roleId\StudentsManagement\StudentsManagement.Shared\obj\Debug\net8.0\StudentsManagement.Shared.csproj.CoreCompileInputs.cache
+D:\CHUYÊN NGÀNH 5\Loại bỏ roleId\StudentsManagement\StudentsManagement.Shared\obj\Debug\net8.0\StudentsManagement.Shared.sourcelink.json
+D:\CHUYÊN NGÀNH 5\Loại bỏ roleId\StudentsManagement\StudentsManagement.Shared\obj\Debug\net8.0\StudentsManagement.Shared.dll
+D:\CHUYÊN NGÀNH 5\Loại bỏ roleId\StudentsManagement\StudentsManagement.Shared\obj\Debug\net8.0\refint\StudentsManagement.Shared.dll
+D:\CHUYÊN NGÀNH 5\Loại bỏ roleId\StudentsManagement\StudentsManagement.Shared\obj\Debug\net8.0\StudentsManagement.Shared.pdb
+D:\CHUYÊN NGÀNH 5\Loại bỏ roleId\StudentsManagement\StudentsManagement.Shared\obj\Debug\net8.0\ref\StudentsManagement.Shared.dll

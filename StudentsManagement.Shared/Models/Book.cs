@@ -15,6 +15,8 @@ namespace StudentsManagement.Shared.Models
 
         [Required(ErrorMessage = "Book Author is required.")]
         public string Auther { get; set; }
+        [Required]
+        [Range(1, int.MaxValue, ErrorMessage = "The number of books must be greater than 0.")]
         public string NoOfCopy { get; set; }
 
         [Required(ErrorMessage = "Please select a book category.")]

@@ -1,8 +1,10 @@
 ﻿@page "/add-parent"
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
 @using StudentsManagement.Shared.Models
 @inject NavigationManager navigation;
 @inject IJSRuntime JSRuntime
-@rendermode InteractiveServer
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
 
 <div class="row">
     <div class="col-12">
@@ -12,9 +14,12 @@
             </div>
             <div class="card-body">
                 <div class="col-md-12">
-                    <EditForm Model="parentobj" OnValidSubmit="CreateParent" FormName="addparent">
+                    <EditForm Model="parentobj" OnValidSubmit="CreateParent" FormName="addparent" OnInvalidSubmit="HandleInvalidSubmit">
                         <DataAnnotationsValidator />
-                        <ValidationSummary />
+                        @if (!string.IsNullOrEmpty(serverErrorMessage))
+                        {
+                            <div class="alert alert-danger">@serverErrorMessage</div>
+                        }
                         <div class="col-md-12">
                             <div class="row">
                                 <div class="col-md-6">
@@ -77,10 +82,23 @@
                                 </div>
                                 <div class="col-md-6">
                                     <div class="form-group">
+                                        <label class="control-label">Student's Class</label>
+                                        <InputSelect class="form-control" @bind-Value="SelectedClassId">
+                                            <option value="">Select Class</option>
+                                            @foreach (var classItem in Classes)
+                                            {
+                                                <option value="@classItem.Id">@classItem.Description</option>
+                                            }
+                                        </InputSelect>
+                                        <ValidationMessage For="()=>SelectedClassId" />
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
                                         <label class="control-label">Student</label>
-                                        <InputSelect for="StudentId" class="form-control" @bind-Value="@parentobj.StudentId">
+                                        <InputSelect class="form-control" @bind-Value="@parentobj.StudentId">
                                             <option value="">Select Student</option>
-                                            @foreach (var student in Students)
+                                            @foreach (var student in FilteredStudents)
                                             {
                                                 <option value="@student.Id">@student.FullName</option>
                                             }
@@ -88,6 +106,7 @@
                                         <ValidationMessage For="()=>parentobj.StudentId" />
                                     </div>
                                 </div>
+
                                 <div class="col-md-6">
                                     <div class="form-group">
                                         <label class="control-label">Relationship Type</label>
@@ -126,32 +145,76 @@
     public Parent parentobj { get; set; } = new();
 
     List<SystemCodeDetail> ParentType = new List<SystemCodeDetail>();
-
     List<SystemCodeDetail> Gender = new List<SystemCodeDetail>();
+    List<SystemCodeDetail> Classes = new List<SystemCodeDetail>();
+    List<Student> FilteredStudents = new List<Student>(); // This will be displayed in the dropdown
+    List<Student> Students = new List<Student>(); // All students
+    private int? selectedClassId;
+    private EditContext EditContext;
+    private string serverErrorMessage;
 
-    List<Student> Students = new List<Student>();
+    // Property for the selected class
+    public int? SelectedClassId
+    {
+        get => selectedClassId;
+        set
+        {
+            selectedClassId = value;
+            OnClassChanged(selectedClassId);  // Call the filtering logic when the class changes
+        }
+    }
 
     protected override async Task OnInitializedAsync()
     {
+        EditContext = new EditContext(parentobj);
         ParentType = await SystemCodeDetailService.GetByCodeAsync("ParentType");
         Gender = await SystemCodeDetailService.GetByCodeAsync("Gender");
+        Classes = await SystemCodeDetailService.GetByCodeAsync("Class");
         Students = await StudentService.GetAllStudentsAsync();
+
+        // Initialize with all students by default
+        FilteredStudents = Students;
+    }
+
+    private void OnClassChanged(int? selectedClassId)
+    {
+        if (selectedClassId.HasValue)
+        {
+            // Ensure filtering happens when a class is selected
+            FilteredStudents = Students.Where(s => s.ClassId == selectedClassId.Value).ToList();
+            Console.WriteLine($"Filtered Students Count: {FilteredStudents.Count}");
+        }
+        else
+        {
+            // If no class is selected, show all students
+            FilteredStudents = Students;
+        }
+
+        // Trigger UI refresh
+        InvokeAsync(StateHasChanged);
     }
 
     protected async Task CreateParent()
     {
+        parentobj.ClassId = selectedClassId.Value;
         try
         {
+            serverErrorMessage = null;
             var result = await ParentService.AddAsync(parentobj);
-            navigation.NavigateTo("/parents-list");
+            navigation.NavigateTo("/parents-list", forceLoad: true);
         }
         catch (Exception ex)
         {
-            await JSRuntime.InvokeVoidAsync("alert", "Error while saving the parent: " + ex.Message);
+            serverErrorMessage = ex.Message;
         }
     }
+
     public void Cancel()
     {
-        navigation.NavigateTo("/parents-list");
+        navigation.NavigateTo("/parents-list", forceLoad: true);
+    }
+    private void HandleInvalidSubmit(EditContext editContext)
+    {
+        serverErrorMessage = "Please fill in all required fields.";
     }
 }

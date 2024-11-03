@@ -53,11 +53,27 @@ namespace StudentsManagement.Client.Services
 
             if (response == null)
             {
-                return new List<SystemCodeDetail>(); // Return an empty list if null
+                return new List<SystemCodeDetail>();
             }
 
             return response;
         }
 
+        public async Task<PaginationModel<SystemCodeDetail>> GetPagedSystemCodeDetailsAsync(int pageNumber, int pageSize)
+        {
+            var response = await _httpClient.GetFromJsonAsync<PaginationModel<SystemCodeDetail>>(
+                $"api/systemCodeDetail?pageNumber={pageNumber}&pageSize={pageSize}");
+            return response;
+        }
+
+        public async Task<SystemCodeDetail> GetByStatusCodeAsync(string code, string statusCode)
+        {
+            var response = await _httpClient.GetFromJsonAsync<List<SystemCodeDetail>>($"api/SystemCodeDetails/ByStatusCode/{code}");
+            if (response == null)
+            {
+                return new SystemCodeDetail(); 
+            }
+            return response?.FirstOrDefault(); ;
+        }
     }
 }

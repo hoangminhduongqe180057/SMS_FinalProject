@@ -1,0 +1,126 @@
+﻿@page "/add-complaintaction"
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
+@using StudentsManagement.Shared.Models
+@using System.Security.Claims
+@inject NavigationManager navigation;
+@inject IJSRuntime JSRuntime
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@inject HttpClient Http;
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Add New Complaint Action</h3>
+            </div>
+            <div class="card-body">
+                <EditForm Model="complaintobj" OnValidSubmit="CreateComplaintAction" FormName="addComplaintAction" OnInvalidSubmit="HandleInvalidSubmit">
+                    <DataAnnotationsValidator />
+                    <ValidationSummary />
+                    <div class="col-md-12">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="control-label">Complaint Note</label>
+                                    <InputText for="Notes" class="form-control" @bind-Value="@complaintobj.Notes" />
+                                    <ValidationMessage For="()=>complaintobj.Notes" />
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="control-label">Complaint Status</label>
+                                    <InputSelect for="ActionStatusId" class="form-control" @bind-Value="@complaintobj.ActionStatusId">
+                                        <option value="">Select Complaint Source</option>
+                                        @if (ComplaintSource != null && ComplaintSource.Any())
+                                        {
+                                            @foreach (var source in ComplaintSource)
+                                            {
+                                                <option value="@source.Id">@source.Description</option>
+                                            }
+                                        }
+                                    </InputSelect>
+                                    <ValidationMessage For="()=>complaintobj.ActionStatusId" />
+                                </div>
+                            </div>
+
+                        </div>
+                        <div class="form-group mt-4">
+                            <button type="submit" class="btn btn-primary">Save Complaint</button>
+                            <button type="button" @onclick="()=>Cancel()" class="btn btn-danger">Back to List</button>
+                        </div>
+                    </div>
+                </EditForm>
+            </div>
+        </div>
+    </div>
+</div>
+@code {
+    [SupplyParameterFromForm]
+    public ComplaintNote complaintobj { get; set; } = new();
+    List<SystemCodeDetail> ComplaintStatus = new List<SystemCodeDetail>();
+    List<SystemCodeDetail> ComplaintSource = new List<SystemCodeDetail>();
+    private string serverErrorMessage;
+
+    public ApplicationUserDto user { get; set; } = new ApplicationUserDto();
+    public string CurrentUserId { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        ComplaintStatus = await SystemCodeDetailService.GetByCodeAsync("ComplaintStatus");
+        ComplaintSource = await SystemCodeDetailService.GetByCodeAsync("ComplaintSource");
+
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var userClaims = authState.User;
+
+        if (userClaims.Identity.IsAuthenticated)
+        {
+            CurrentUserId = userClaims.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            if (!string.IsNullOrEmpty(CurrentUserId))
+            {
+                user = await Http.GetFromJsonAsync<ApplicationUserDto>($"api/User/{CurrentUserId}");
+            }
+            else
+            {
+                Console.WriteLine("User ID is null or empty.");
+            }
+        }
+        else
+        {
+            Console.WriteLine("User is not authenticated.");
+        }
+    }
+
+    protected async Task CreateComplaintAction()
+    {
+        complaintobj.CreatedOn = DateTime.Now;
+        complaintobj.CreatedById = CurrentUserId;
+        try
+        {
+            var result = ComplaintNoteService.AddAsync(complaintobj);
+            navigation.NavigateTo("/complaints-list", forceLoad: true);
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", "Error while saving the complaint note: " + ex.Message);
+        }
+    }
+    public void Cancel()
+    {
+        navigation.NavigateTo("/complaints-list", forceLoad: true);
+    }
+
+    public class ApplicationUserDto
+    {
+        public string Id { get; set; }
+        public string UserName { get; set; }
+        public string Email { get; set; }
+    }
+    private void HandleInvalidSubmit(EditContext editContext)
+    {
+        serverErrorMessage = "Please fill in all required fields.";
+    }
+}

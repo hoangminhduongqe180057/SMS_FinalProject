@@ -182,6 +182,10 @@ namespace StudentsManagement.Migrations
                     b.Property<int>("AccessFailedCount")
                         .HasColumnType("int");
 
+                    b.Property<string>("AccountStatus")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
                         .HasColumnType("nvarchar(max)");
@@ -244,8 +248,7 @@ namespace StudentsManagement.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("RoleId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("SecurityStamp")
                         .HasColumnType("nvarchar(max)");
@@ -268,8 +271,6 @@ namespace StudentsManagement.Migrations
                         .IsUnique()
                         .HasDatabaseName("UserNameIndex")
                         .HasFilter("[NormalizedUserName] IS NOT NULL");
-
-                    b.HasIndex("RoleId");
 
                     b.ToTable("AspNetUsers", (string)null);
                 });
@@ -296,14 +297,53 @@ namespace StudentsManagement.Migrations
                     b.Property<DateTime>("StartDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<int>("StatusId")
-                        .HasColumnType("int");
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("StatusId");
-
                     b.ToTable("AcademicYears");
+                });
+
+            modelBuilder.Entity("StudentsManagement.Shared.Models.AdminMessage", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("AdminEmail")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("AdminName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("AdminRole")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("AvatarUrl")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsOwnMessage")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Message")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("SentAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("AdminMessages");
                 });
 
             modelBuilder.Entity("StudentsManagement.Shared.Models.Book", b =>
@@ -389,6 +429,93 @@ namespace StudentsManagement.Migrations
                     b.ToTable("BookIssuances");
                 });
 
+            modelBuilder.Entity("StudentsManagement.Shared.Models.Complaint", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("ComplaintBy")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("ComplaintDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("ComplaintTypeId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("CreatedById")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedOn")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("PhoneNumber")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("SourceId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("StatusId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ComplaintTypeId");
+
+                    b.HasIndex("SourceId");
+
+                    b.HasIndex("StatusId");
+
+                    b.ToTable("Complaints");
+                });
+
+            modelBuilder.Entity("StudentsManagement.Shared.Models.ComplaintNote", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("ActionStatusId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Attachment")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("ComplaintId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("CreatedById")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedOn")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Notes")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ActionStatusId");
+
+                    b.HasIndex("ComplaintId");
+
+                    b.ToTable("ComplaintNotes");
+                });
+
             modelBuilder.Entity("StudentsManagement.Shared.Models.Country", b =>
                 {
                     b.Property<int>("Id")
@@ -438,6 +565,80 @@ namespace StudentsManagement.Migrations
                     b.ToTable("Departments");
                 });
 
+            modelBuilder.Entity("StudentsManagement.Shared.Models.Hostel", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("CreatedById")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedOn")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("HostelName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("HostelTypeId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("address")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("HostelTypeId");
+
+                    b.ToTable("Hostels");
+                });
+
+            modelBuilder.Entity("StudentsManagement.Shared.Models.HostelRoom", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal>("CostPerBed")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("HostelId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("NoOfBeds")
+                        .HasColumnType("int");
+
+                    b.Property<string>("RoomNo")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("RoomTypeId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("HostelId");
+
+                    b.HasIndex("RoomTypeId");
+
+                    b.ToTable("HostelRooms");
+                });
+
             modelBuilder.Entity("StudentsManagement.Shared.Models.Parent", b =>
                 {
                     b.Property<int>("Id")
@@ -449,6 +650,9 @@ namespace StudentsManagement.Migrations
                     b.Property<string>("Address")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("ClassId")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("DOB")
                         .HasColumnType("datetime2");
@@ -484,6 +688,8 @@ namespace StudentsManagement.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("ClassId");
+
                     b.HasIndex("GenderId");
 
                     b.HasIndex("ParentTypeId");
@@ -504,6 +710,9 @@ namespace StudentsManagement.Migrations
                     b.Property<string>("Address")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("ClassId")
+                        .HasColumnType("int");
 
                     b.Property<int>("CountryId")
                         .HasColumnType("int");
@@ -541,6 +750,8 @@ namespace StudentsManagement.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("ClassId");
 
                     b.HasIndex("CountryId");
 
@@ -750,13 +961,13 @@ namespace StudentsManagement.Migrations
                     b.HasOne("StudentsManagement.Data.ApplicationUser", "CreatedBy")
                         .WithMany()
                         .HasForeignKey("CreatedById")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("StudentsManagement.Data.ApplicationUser", "ReviewedBy")
                         .WithMany()
                         .HasForeignKey("ReviewedById")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("CreatedBy");
@@ -772,26 +983,7 @@ namespace StudentsManagement.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("StudentsManagement.Data.ApplicationRole", "Role")
-                        .WithMany()
-                        .HasForeignKey("RoleId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
                     b.Navigation("Gender");
-
-                    b.Navigation("Role");
-                });
-
-            modelBuilder.Entity("StudentsManagement.Shared.Models.AcademicYears", b =>
-                {
-                    b.HasOne("StudentsManagement.Shared.Models.SystemCodeDetail", "Status")
-                        .WithMany()
-                        .HasForeignKey("StatusId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Status");
                 });
 
             modelBuilder.Entity("StudentsManagement.Shared.Models.Book", b =>
@@ -840,8 +1032,90 @@ namespace StudentsManagement.Migrations
                     b.Navigation("Student");
                 });
 
+            modelBuilder.Entity("StudentsManagement.Shared.Models.Complaint", b =>
+                {
+                    b.HasOne("StudentsManagement.Shared.Models.SystemCodeDetail", "ComplaintType")
+                        .WithMany()
+                        .HasForeignKey("ComplaintTypeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("StudentsManagement.Shared.Models.SystemCodeDetail", "Source")
+                        .WithMany()
+                        .HasForeignKey("SourceId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("StudentsManagement.Shared.Models.SystemCodeDetail", "Status")
+                        .WithMany()
+                        .HasForeignKey("StatusId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ComplaintType");
+
+                    b.Navigation("Source");
+
+                    b.Navigation("Status");
+                });
+
+            modelBuilder.Entity("StudentsManagement.Shared.Models.ComplaintNote", b =>
+                {
+                    b.HasOne("StudentsManagement.Shared.Models.SystemCodeDetail", "ActionStatus")
+                        .WithMany()
+                        .HasForeignKey("ActionStatusId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("StudentsManagement.Shared.Models.Complaint", "Complaint")
+                        .WithMany()
+                        .HasForeignKey("ComplaintId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ActionStatus");
+
+                    b.Navigation("Complaint");
+                });
+
+            modelBuilder.Entity("StudentsManagement.Shared.Models.Hostel", b =>
+                {
+                    b.HasOne("StudentsManagement.Shared.Models.SystemCodeDetail", "HostelType")
+                        .WithMany()
+                        .HasForeignKey("HostelTypeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("HostelType");
+                });
+
+            modelBuilder.Entity("StudentsManagement.Shared.Models.HostelRoom", b =>
+                {
+                    b.HasOne("StudentsManagement.Shared.Models.Hostel", "Hostel")
+                        .WithMany()
+                        .HasForeignKey("HostelId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("StudentsManagement.Shared.Models.SystemCodeDetail", "RoomType")
+                        .WithMany()
+                        .HasForeignKey("RoomTypeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Hostel");
+
+                    b.Navigation("RoomType");
+                });
+
             modelBuilder.Entity("StudentsManagement.Shared.Models.Parent", b =>
                 {
+                    b.HasOne("StudentsManagement.Shared.Models.SystemCodeDetail", "Class")
+                        .WithMany()
+                        .HasForeignKey("ClassId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("StudentsManagement.Shared.Models.SystemCodeDetail", "Gender")
                         .WithMany()
                         .HasForeignKey("GenderId")
@@ -860,6 +1134,8 @@ namespace StudentsManagement.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.Navigation("Class");
+
                     b.Navigation("Gender");
 
                     b.Navigation("ParentType");
@@ -869,6 +1145,12 @@ namespace StudentsManagement.Migrations
 
             modelBuilder.Entity("StudentsManagement.Shared.Models.Student", b =>
                 {
+                    b.HasOne("StudentsManagement.Shared.Models.SystemCodeDetail", "Class")
+                        .WithMany()
+                        .HasForeignKey("ClassId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("StudentsManagement.Shared.Models.Country", "Country")
                         .WithMany()
                         .HasForeignKey("CountryId")
@@ -880,6 +1162,8 @@ namespace StudentsManagement.Migrations
                         .HasForeignKey("GenderId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Class");
 
                     b.Navigation("Country");
 

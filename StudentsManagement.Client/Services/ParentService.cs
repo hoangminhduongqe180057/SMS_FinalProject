@@ -1,4 +1,5 @@
-﻿using StudentsManagement.Client.Repository;
+﻿using Microsoft.JSInterop;
+using StudentsManagement.Client.Repository;
 using StudentsManagement.Shared.Models;
 using System.Net.Http.Json;
 
@@ -7,9 +8,11 @@ namespace StudentsManagement.Client.Services
     public class ParentService : IParentRepository
     {
         private readonly HttpClient _httpClient;
-        public ParentService(HttpClient httpClient)
+        private readonly IJSRuntime _jsRuntime;
+        public ParentService(HttpClient httpClient, IJSRuntime jsRuntime)
         {
             _httpClient = httpClient;
+            _jsRuntime = jsRuntime;
         }
         public async Task<Parent> AddAsync(Parent parent)
         {
@@ -44,6 +47,47 @@ namespace StudentsManagement.Client.Services
             var newparent = await _httpClient.PostAsJsonAsync("api/Parent/Update-Parent", parent);
             var respone = await newparent.Content.ReadFromJsonAsync<Parent>();
             return respone;
+        }
+
+        public async Task<PaginationModel<Parent>> GetPagedParentsAsync(int pageNumber, int pageSize)
+        {
+            var response = await _httpClient.GetFromJsonAsync<PaginationModel<Parent>>(
+                $"api/parent?pageNumber={pageNumber}&pageSize={pageSize}");
+            return response;
+        }
+
+        public async Task<byte[]> ExportToCsvAsync()
+        {
+            var url = "/api/export/ExportParentsToCsv";
+            var response = await _httpClient.GetAsync(url);
+            var csvContent = await response.Content.ReadAsByteArrayAsync();
+            await _jsRuntime.InvokeVoidAsync("downloadFile", "Parents.csv", "text/csv", csvContent);
+            return new byte[0];
+        }
+
+        public async Task<PaginationModel<Parent>> GetPagedParentsAsync(int pageNumber, int pageSize, SearchParameters searchParameters = null)
+        {
+            var queryString = $"pageNumber={pageNumber}&pageSize={pageSize}";
+
+            if (searchParameters != null)
+            {
+                if (!string.IsNullOrEmpty(searchParameters.StudentName))
+                    queryString += $"&registrationNo={searchParameters.StudentName}";
+                if (!string.IsNullOrEmpty(searchParameters.Name))
+                    queryString += $"&name={searchParameters.Name}";
+                if (!string.IsNullOrEmpty(searchParameters.Email))
+                    queryString += $"&email={searchParameters.Email}";
+                if (!string.IsNullOrEmpty(searchParameters.PhoneNumber))
+                    queryString += $"&phoneNumber={searchParameters.PhoneNumber}";
+                if (!string.IsNullOrEmpty(searchParameters.Class))
+                    queryString += $"&class={searchParameters.Class}";
+
+                // Thêm tham số sắp xếp
+                queryString += $"&sortField={searchParameters.SortField}&sortAscending={searchParameters.SortAscending}";
+            }
+
+            var response = await _httpClient.GetFromJsonAsync<PaginationModel<Parent>>($"api/parents/paged?{queryString}");
+            return response;
         }
     }
 }

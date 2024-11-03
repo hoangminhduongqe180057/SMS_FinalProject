@@ -1,0 +1,228 @@
+﻿@page "/pending-accounts"
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize(Roles = "System")]
+@using Microsoft.AspNetCore.Identity
+@inject NavigationManager NavigationManager
+ @rendermode @(new InteractiveServerRenderMode(prerender: false)) 
+@* @rendermode InteractiveServer *@
+@using Microsoft.AspNetCore.Identity.UI.Services
+@using Microsoft.JSInterop
+@using Microsoft.EntityFrameworkCore
+@using StudentsManagement.Data
+@using StudentsManagement.Services
+@using StudentsManagement.Shared.Models
+@inject UserManager<ApplicationUser> UserManager
+@inject RoleManager<ApplicationRole> roleManager
+@inject ApplicationDbContext _context
+@inject SystemCodeDetailRepository systemCodeDetailRepository
+@inject IEmailSender EmailSender
+
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Pending Accounts</h3>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="card">
+                            <div class="card-header"></div>
+                            @if (pendingUsersModel == null)
+                            {
+                                <p><em>Loading pending accounts...</em></p>
+                            }
+                            else if (!pendingUsersModel.Items.Any())
+                            {
+                                <div class="alert alert-info">There are no pending accounts.</div>
+                            }
+                            else
+                            {
+                                <div class="card-body">
+                                    <table class="table table-striped table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th>Photo</th>
+                                                <th>Email</th>
+                                                <th>Full Name</th>
+                                                <th>Phone Number</th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach (var user in pendingUsersModel.Items)
+                                            {
+                                                <tr>
+                                                    <td>
+                                                        @if (!string.IsNullOrEmpty(user.Photo))
+                                                        {
+                                                            <img src="/Images/@user.Photo" alt="User Photo" style="width: 50px; height: 50px; border-radius: 50%; object-fit: cover;" />
+                                                        }
+                                                        else
+                                                        {
+                                                            <span>No Photo</span>
+                                                        }
+                                                    </td>
+                                                    <td>@user.Email</td>
+                                                    <td>@user.FullName</td>
+                                                    <td>@user.PhoneNumber</td>
+                                                    <td>
+                                                        <button class="btn btn-success" @onclick="() => ApproveUser(user.Id)">Approve</button>
+                                                        <button class="btn btn-danger" @onclick="() => RejectUser(user.Id)">Reject</button>
+                                                    </td>
+                                                </tr>
+                                            }
+                                        </tbody>
+                                    </table>
+
+                                    <!-- Pagination Controls -->
+                                    <div class="button-group mt-3">
+                                        <button class="btn btn-custom" @onclick="PreviousPage" style="@GetButtonStyle(!CanGoToPreviousPage)">Previous</button>
+                                        <button class="btn btn-custom ms-2" @onclick="NextPage" style="@GetButtonStyle(!CanGoToNextPage)">Next</button>
+                                    </div>
+                                    <p class="mt-2">Page @pendingUsersModel.CurrentPage of @pendingUsersModel.TotalPages</p>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private PaginationModel<ApplicationUser>? pendingUsersModel;
+    private int currentPage = 1;
+    private int pageSize = 10; // Số lượng tài khoản trên mỗi trang
+    private string? message = null;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadPendingAccounts(currentPage); // Chuyển currentPage vào khi khởi tạo
+    }
+
+    private async Task LoadPendingAccounts(int page)
+    {
+        try
+        {
+            var query = UserManager.Users.Where(u => u.AccountStatus == "Pending");
+
+            // Đếm tổng số tài khoản chờ duyệt
+            var totalItems = await query.CountAsync();
+
+            // Lấy danh sách tài khoản chờ duyệt theo phân trang
+            var users = await query
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            pendingUsersModel = new PaginationModel<ApplicationUser>
+                {
+                    Items = users,
+                    TotalItems = totalItems,
+                    CurrentPage = page,
+                    PageSize = pageSize
+                };
+        }
+        catch (Exception ex)
+        {
+            message = $"An error occurred while loading pending accounts: {ex.Message}";
+        }
+    }
+
+    private async Task NextPage()
+    {
+        if (CanGoToNextPage)
+        {
+            currentPage++;
+            await LoadPendingAccounts(currentPage);
+        }
+    }
+
+    private async Task PreviousPage()
+    {
+        if (CanGoToPreviousPage)
+        {
+            currentPage--;
+            await LoadPendingAccounts(currentPage);
+        }
+    }
+
+    private string GetButtonStyle(bool isInactive)
+    {
+        return isInactive ? "opacity: 0.6; pointer-events: none;" : "";
+    }
+
+    private bool CanGoToPreviousPage => pendingUsersModel?.CurrentPage > 1;
+    private bool CanGoToNextPage => pendingUsersModel?.CurrentPage < pendingUsersModel?.TotalPages;
+
+
+    private async Task ApproveUser(string userId)
+    {
+        try
+        {
+            var user = await UserManager.FindByIdAsync(userId);
+            if (user != null)
+            {
+                user.AccountStatus = "Approved";
+                await UserManager.UpdateAsync(user);
+
+                // Gửi email phê duyệt cho người dùng
+                var subject = "Your account has been approved";
+                var body = $"Dear {user.LastName},\n\nYour account has been approved. You can now log in and start using the system.";
+                await EmailSender.SendEmailAsync(user.Email, subject, body);
+
+                // Tải lại danh sách sau khi phê duyệt
+                await LoadPendingAccounts(currentPage); // Đảm bảo cập nhật danh sách cho trang hiện tại
+                message = $"User {user.Email} has been approved.";
+            }
+            else
+            {
+                message = "User not found.";
+            }
+        }
+        catch (Exception ex)
+        {
+            message = $"An error occurred while approving the user: {ex.Message}";
+        }
+        finally
+        {
+            StateHasChanged();
+        }
+    }
+
+    private async Task RejectUser(string userId)
+    {
+        try
+        {
+            var user = await UserManager.FindByIdAsync(userId);
+            if (user != null)
+            {
+                user.AccountStatus = "Rejected";
+                await UserManager.UpdateAsync(user);
+
+                // Gửi email từ chối cho người dùng
+                var subject = "Your account registration has been rejected";
+                var body = $"Dear {user.LastName},\n\nWe regret to inform you that your account registration has been rejected.";
+                await EmailSender.SendEmailAsync(user.Email, subject, body);
+
+                // Tải lại danh sách sau khi từ chối
+                await LoadPendingAccounts(currentPage); // Đảm bảo cập nhật danh sách cho trang hiện tại
+                message = $"User {user.Email} has been rejected.";
+            }
+            else
+            {
+                message = "User not found.";
+            }
+        }
+        catch (Exception ex)
+        {
+            message = $"An error occurred while rejecting the user: {ex.Message}";
+        }
+        finally
+        {
+            StateHasChanged();
+        }
+    }
+}

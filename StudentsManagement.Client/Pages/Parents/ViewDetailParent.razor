@@ -1,0 +1,85 @@
+﻿@page "/parent/detail/{id:int}"
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
+@using StudentsManagement.Shared.Models
+@inject NavigationManager navigation;
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+
+<h3>View Parent Detail</h3>
+
+<hr />
+<div class="row">
+    <div class="col-md-12">
+        <table class="table">
+            <tr>
+                <th>Full Name</th>
+                <td>@parentobj?.FullName</td>
+            </tr>
+            <tr>
+                <th>Student's Class</th>
+                <td>@parentobj.Class?.Description</td>
+            </tr>
+            <tr>
+                <th>Gender</th>
+                <td>@parentobj.Gender?.Description</td>
+            </tr>
+            <tr>
+                <th>Date of birth</th>
+                <td>@parentobj.DOB.ToShortDateString()</td>
+            </tr>
+            <tr>
+                <th>Email Address</th>
+                <td>@parentobj.EmailAddress</td>
+            </tr>
+            <tr>
+                <th>Student Address</th>
+                <td>@parentobj.Address</td>
+            </tr>
+            <tr>
+                <th>Phone Number</th>
+                <td>@parentobj.PhoneNumber</td>
+            </tr>
+            <tr>
+                <th>Student</th>
+                <td>@parentobj.Student?.FullName</td>
+            </tr>
+            <tr>
+                <th>Parent Type</th>
+                <td>@parentobj.ParentType?.Description</td>
+            </tr>
+        </table>
+    </div>
+    <div class="form-group">
+        <a class="btn btn-success" href="/parent/edit/@parentobj.Id"> Update Parent </a>
+        <button type="button" @onclick="()=>Cancel()" class="btn btn-danger">Back to list</button>
+    </div>
+</div>
+
+@code {
+    [SupplyParameterFromForm]
+    public Parent parentobj { get; set; } = new();
+
+    [Parameter]
+    public int id { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadParent();
+    }
+
+    private async Task LoadParent()
+    {
+        parentobj = await ParentService.GetByIdAsync(id);
+    }
+
+    protected async Task Delete()
+    {
+        var result = await ParentService.DeleteAsync(id);
+        navigation.NavigateTo("/parents-list", forceLoad: true);
+    }
+
+    public void Cancel()
+    {
+        navigation.NavigateTo("/parents-list", forceLoad: true);
+    }
+}

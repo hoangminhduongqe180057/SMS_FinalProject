@@ -1,0 +1,61 @@
+﻿@page "/systemCodeDetail/detail/{id:int}"
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
+@using StudentsManagement.Shared.Models
+@inject NavigationManager navigation;
+@rendermode @(new InteractiveServerRenderMode(prerender: false)) 
+
+<h3>View System Code Detail</h3>
+
+<hr />
+<div class="row">
+    <div class="col-md-12">
+        <table class="table">
+            <tr>
+                <th>System Code Detail Code</th>
+                <td>@systemCodeDetailObj.Code</td>
+            </tr
+            <tr>
+                <th>System Code Detail Description</th>
+                <td>@systemCodeDetailObj.Description</td>
+            </tr>
+            <tr>
+                <th>System Code</th>
+                <td>@systemCodeDetailObj.SystemCode?.Description</td>
+            </tr>
+        </table>
+    </div>
+    <div class="form-group">
+        <a class="btn btn-success" href="/systemCodeDetail/edit/@systemCodeDetailObj.Id"> Update System Code Detail </a>
+        <button type="button" @onclick="()=>Cancel()" class="btn btn-danger">Back to list</button>
+    </div>
+</div>
+
+@code {
+    [SupplyParameterFromForm]
+    public SystemCodeDetail systemCodeDetailObj { get; set; } = new();
+
+    [Parameter]
+    public int id { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadSystemCodeDetail();
+    }
+
+    private async Task LoadSystemCodeDetail()
+    {
+        systemCodeDetailObj = await SystemCodeDetailService.GetByIdAsync(id);
+    }
+
+    protected async Task Delete()
+    {
+        var result = await SystemCodeDetailService.DeleteAsync(id);
+        navigation.NavigateTo("/systemCodeDetails-list", forceLoad: true);
+    }
+
+    public void Cancel()
+    {
+        navigation.NavigateTo("/systemCodeDetails-list", forceLoad: true);
+    }
+}

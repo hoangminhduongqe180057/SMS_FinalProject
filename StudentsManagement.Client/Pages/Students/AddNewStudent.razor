@@ -1,17 +1,23 @@
 ﻿@page "/add-student"
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
 @using StudentsManagement.Shared.Models
 @inject NavigationManager navigation;
 @inject IJSRuntime JSRuntime
-@rendermode InteractiveServer
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
 
 <h3>Add New Student</h3>
 
 <hr />
 <div class="row">
     <div class="col-md-12">
-        <EditForm Model="studobj" OnValidSubmit="CreateStudent" FormName="addstudent">
+        <EditForm Model="studobj" OnValidSubmit="CreateStudent" FormName="addstudent" OnInvalidSubmit="HandleInvalidSubmit">
             <DataAnnotationsValidator />
-            <ValidationSummary />
+            <!-- Display server-side validation error message -->
+            @if (!string.IsNullOrEmpty(serverErrorMessage))
+            {
+                <div class="alert alert-danger">@serverErrorMessage</div>
+            }
             <div class="col-md-12">
                 <div class="row">
                     <div class="col-md-6">
@@ -47,6 +53,22 @@
                             <label class="control-label">Email Address</label>
                             <InputText for="EmailAddress" class="form-control" @bind-Value="@studobj.EmailAddress" />
                             <ValidationMessage For="()=>studobj.EmailAddress" />
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="control-label">Class</label>
+                            <InputSelect for="Class" class="form-control" @bind-Value="@studobj.ClassId">
+                                <option value="">Select Class</option>
+                                @if (Classes != null && Classes.Any())
+                                {
+                                    @foreach (var c in Classes)
+                                    {
+                                        <option value="@c.Id">@c.Description</option>
+                                    }
+                                }
+                            </InputSelect>
+                            <ValidationMessage For="()=>studobj.ClassId" />
                         </div>
                     </div>
                     <div class="col-md-6">
@@ -100,15 +122,14 @@
                         </div>
                     </div>
                 </div>
-                <div class="form-group mt-4">
-                    <button type="submit" class="btn btn-primary">Save Student</button>
-                    <button type="button" @onclick="Cancel" class="btn btn-danger">Back to List</button>
-                </div>
+            </div>
+            <div class="form-group mt-4">
+                <button type="submit" class="btn btn-primary">Save Student</button>
+                <button type="button" @onclick="Cancel" class="btn btn-danger">Back to List</button>
             </div>
         </EditForm>
     </div>
 </div>
-
 
 @code {
 
@@ -116,37 +137,46 @@
     public Student studobj { get; set; } = new();
 
     List<Country> Countries = new List<Country>();
-
     List<SystemCodeDetail> Gender = new List<SystemCodeDetail>();
+    List<SystemCodeDetail> Classes = new List<SystemCodeDetail>();
+    private EditContext EditContext;
+    private string serverErrorMessage;
 
     protected override async Task OnInitializedAsync()
     {
+        EditContext = new EditContext(studobj);
         Countries = await CountryService.GetAllAsync();
         Gender = await SystemCodeDetailService.GetByCodeAsync("Gender");
+        Classes = await SystemCodeDetailService.GetByCodeAsync("Class");
     }
 
-    protected async Task CreateStudent()
+    private async Task CreateStudent()
     {
-        // try
-        // {
-        var result = await StudentService.AddStudentAsync(studobj);
-        navigation.NavigateTo("/students-list");
-        // }
-        // catch (Exception ex)
-        // {
-        //     Log hoặc hiển thị lỗi
-        //     await JSRuntime.InvokeVoidAsync("alert", "Error while saving the student: " + ex.Message);
-        // }
+        try
+        {
+            // Clear previous error messages
+            serverErrorMessage = null;
+
+            // Call the API to add the student
+            var result = await StudentService.AddStudentAsync(studobj);
+
+            // Navigate to the students list page if successful
+            navigation.NavigateTo("/students-list", forceLoad: true);
+        }
+        catch (Exception ex)
+        {
+            // Display the server error message on the screen
+            serverErrorMessage = ex.Message;
+        }
     }
 
-
+    private void HandleInvalidSubmit(EditContext editContext)
+    {
+        serverErrorMessage = "Please fill in all required fields.";
+    }
 
     public void Cancel()
     {
-        Console.WriteLine("Cancel method called");
-        navigation.NavigateTo("/students-list");
+        navigation.NavigateTo("/students-list", forceLoad: true);
     }
 }
-
-
-

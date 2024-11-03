@@ -9,5 +9,8 @@ namespace StudentsManagement.Client.Repository
         Task<Department> DeleteAsync(int departmentId);
         Task<Department> GetByIdAsync(int departmentId);
         Task<List<Department>> GetAllAsync();
+        Task<PaginationModel<Department>> GetPagedDepartmentsAsync(int pageNumber, int pageSize);
+        Task<byte[]> ExportToCsvAsync();
+        Task<PaginationModel<Department>> GetPagedDepartmentsAsync(int pageNumber, int pageSize, SearchParameters searchParameters = null);
     }
 }

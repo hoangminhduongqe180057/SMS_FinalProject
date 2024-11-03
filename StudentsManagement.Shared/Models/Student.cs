@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using StudentsManagement.Shared.Validators;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace StudentsManagement.Shared.Models
@@ -9,6 +10,7 @@ namespace StudentsManagement.Shared.Models
         public int Id { get; set; }
 
         [Required]
+        [RegularExpression(@"^SV\d{4}$", ErrorMessage = "Registration No must be in the format 'SVxxxx' where xxxx are 4 digits.")]
         public string RegistrationNo { get; set; }
 
         [Required]
@@ -25,6 +27,7 @@ namespace StudentsManagement.Shared.Models
 
         [Required]
         [EmailAddress]  // Đảm bảo đây là một địa chỉ email hợp lệ
+        [RegularExpression(@"^[a-zA-Z0-9_.+-]+@gmail\.com$", ErrorMessage = "Email must be a valid gmail.com address.")]
         public string EmailAddress { get; set; }
 
         [Required]
@@ -32,6 +35,7 @@ namespace StudentsManagement.Shared.Models
 
         [Required]
         [Phone]  // Kiểm tra định dạng số điện thoại
+        [RegularExpression(@"^0\d{9}$", ErrorMessage = "Phone number must be 10 digits and start with '0'.")]
         public string PhoneNumber { get; set; }
 
         [Required]
@@ -45,6 +49,11 @@ namespace StudentsManagement.Shared.Models
         public SystemCodeDetail Gender { get; set; }
 
         [Required]
+        [ValidAge(18, 100)]
         public DateTime DOB { get; set; }  // Ngày sinh
+        [Required]
+        public int ClassId { get; set; }
+
+        public SystemCodeDetail Class { get; set; }
     }
 }

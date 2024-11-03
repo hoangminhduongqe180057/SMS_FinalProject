@@ -1,16 +1,18 @@
 ﻿@page "/country/edit/{id:int}"
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
 @using StudentsManagement.Client.Services
 @using StudentsManagement.Shared.Models
 @inject NavigationManager navigation;
 @inject IJSRuntime JSRuntime
-@rendermode InteractiveServer
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
 
 <h3>Update Country Detail</h3>
 
 <hr />
 <div class="row">
     <div class="col-md-12">
-        <EditForm Model="countryobj" OnValidSubmit="UpdateCountry" FormName="updateCountry">
+        <EditForm Model="countryobj" OnValidSubmit="UpdateCountry" FormName="updateCountry" OnInvalidSubmit="HandleInvalidSubmit">
             <DataAnnotationsValidator />
             <ValidationSummary />
             <div class="col-md-12">
@@ -32,7 +34,7 @@
                     </div>
                 </div>
                 <div class="form-group mt-4">
-                    <button type="submit" class="btn btn-primary">Update Country</button>
+                    <button type="submit" class="btn btn-primary">Save Country</button>
                     <button type="button" @onclick="()=>Cancel()" class="btn btn-danger">Back to list</button>
                 </div>
             </div>
@@ -43,6 +45,7 @@
 @code {
     [SupplyParameterFromForm]
     public Country countryobj { get; set; } = new();
+    private string serverErrorMessage;
 
     [Parameter]
     public int id { get; set; }
@@ -62,7 +65,7 @@
         try
         {
             var rs = await CountryService.UpdateAsync(countryobj);
-            navigation.NavigateTo("/countries-list");
+            navigation.NavigateTo("/countries-list", forceLoad: true);
         }
         catch(Exception ex)
         {
@@ -72,6 +75,10 @@
 
     public void Cancel()
     {
-        navigation.NavigateTo("/countries-list");
+        navigation.NavigateTo("/countries-list", forceLoad: true);
+    }
+    private void HandleInvalidSubmit(EditContext editContext)
+    {
+        serverErrorMessage = "Please fill in all required fields.";
     }
 }

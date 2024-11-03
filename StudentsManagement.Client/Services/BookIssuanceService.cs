@@ -53,5 +53,18 @@ namespace StudentsManagement.Client.Services
             var respone = await data.Content.ReadFromJsonAsync<BookIssuance>();
             return respone;
         }
+
+        public async Task<PaginationModel<BookIssuance>> GetPagedBookIssuancesAsync(int pageNumber, int pageSize)
+        {
+            var response = await _httpClient.GetFromJsonAsync<PaginationModel<BookIssuance>>(
+                $"api/BbookIssuance?pageNumber={pageNumber}&pageSize={pageSize}");
+            return response;
+        }
+        public async Task<PaginationModel<BookIssuance>> GetPagedBookReturnedAsync(int pageNumber, int pageSize)
+        {
+            var response = await _httpClient.GetFromJsonAsync<PaginationModel<BookIssuance>>(
+                $"api/BbookReturned?pageNumber={pageNumber}&pageSize={pageSize}");
+            return response;
+        }
     }
 }

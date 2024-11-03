@@ -80,5 +80,49 @@ namespace StudentsManagement.Services
             await _context.SaveChangesAsync();
             return data;
         }
+
+        public async Task<PaginationModel<BookIssuance>> GetPagedBookIssuancesAsync(int pageNumber, int pageSize)
+        {
+            var totalItems = await _context.BookIssuances.CountAsync();
+            var bookIssuances = await _context.BookIssuances
+                .Include(s => s.Student)
+                .Include(c => c.Class)
+                .Include(b => b.Book)
+                .Include(t => t.Status)
+                .Where(x => x.Status.Code == "Issued")
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            return new PaginationModel<BookIssuance>
+            {
+                Items = bookIssuances,
+                TotalItems = totalItems,
+                CurrentPage = pageNumber,
+                PageSize = pageSize
+            };
+        }
+
+        public async Task<PaginationModel<BookIssuance>> GetPagedBookReturnedAsync(int pageNumber, int pageSize)
+        {
+            var totalItems = await _context.BookIssuances.CountAsync();
+            var bookIssuances = await _context.BookIssuances
+                .Include(s => s.Student)
+                .Include(c => c.Class)
+                .Include(b => b.Book)
+                .Include(t => t.Status)
+                .Where(x => x.Status.Code == "Returned")
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            return new PaginationModel<BookIssuance>
+            {
+                Items = bookIssuances,
+                TotalItems = totalItems,
+                CurrentPage = pageNumber,
+                PageSize = pageSize
+            };
+        }
     }
 }

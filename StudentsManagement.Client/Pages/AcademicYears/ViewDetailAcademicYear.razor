@@ -1,0 +1,66 @@
+﻿@page "/academicYear/detail/{id:int}"
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
+@using StudentsManagement.Shared.Models
+@inject NavigationManager navigation;
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@inject IJSRuntime JSRuntime
+
+<h3>Delete Academic Year</h3>
+
+<hr />
+<div class="row">
+    <div class="col-md-12">
+        <table class="table">
+            <tr>
+                <th>Name</th>
+                <td>@academicobj.Name</td>
+            </tr>
+            <tr>
+                <th>Start Date</th>
+                <td>@academicobj.StartDate</td>
+            </tr>
+            <tr>
+                <th>End Date</th>
+                <td>@academicobj.EndDate</td>
+            </tr>
+            <tr>
+                <th>Status</th>
+                <td>@academicobj.Status</td>
+            </tr>
+        </table>
+    </div>
+    <div class="form-group">
+        <a class="btn btn-success" href="/academicYear/edit/@academicobj.Id"> Update Academic Year </a>
+        <button type="button" @onclick="()=>Cancel()" class="btn btn-danger">Back to list</button>
+    </div>
+</div>
+
+@code {
+    [SupplyParameterFromForm]
+    public AcademicYears academicobj { get; set; } = new();
+
+    [Parameter]
+    public int id { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAcademicYear();
+    }
+
+    private async Task LoadAcademicYear()
+    {
+        academicobj = await AcademicYearService.GetByIdAsync(id);
+    }
+
+    protected async Task Delete()
+    {
+        var result = await AcademicYearService.DeleteAsync(id);
+        navigation.NavigateTo("/academicYears-list", forceLoad: true);
+    }
+
+    public void Cancel()
+    {
+        navigation.NavigateTo("/academicYears-list", forceLoad: true);
+    }
+}

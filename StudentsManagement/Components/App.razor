@@ -8,12 +8,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Students Management System</title>
 
-    @if (!NavigationManager.Uri.Contains("/Account/Login"))
+    @if (!NavigationManager.Uri.Contains("/Account/Login") && !NavigationManager.Uri.Contains("/Account/Register"))
     {
-        <!-- Load AdminLTE styles only for non-login pages -->
+        <base href="/" />
+        <!-- Load AdminLTE styles only for non-login and non-register pages -->
         <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700&display=fallback">
         <link rel="stylesheet" href="https://code.ionicframework.com/ionicons/2.0.1/css/ionicons.min.css">
-        <base href="/" />
         <link rel="stylesheet" href="AdminLTE/plugins/fontawesome-free/css/all.min.css">
         <link rel="stylesheet" href="AdminLTE/plugins/tempusdominus-bootstrap-4/css/tempusdominus-bootstrap-4.min.css">
         <link rel="stylesheet" href="AdminLTE/plugins/icheck-bootstrap/icheck-bootstrap.min.css">
@@ -24,8 +24,599 @@
         <link rel="stylesheet" href="AdminLTE/plugins/summernote/summernote-bs4.min.css">
         <link rel="stylesheet" href="app.css">
         <link rel="stylesheet" href="StudentsManagement.styles.css" />
-    }
+        <!-- FullCalendar CSS -->
+        <link href="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.10.2/fullcalendar.min.css" rel="stylesheet" />
 
+        <style>
+            body > div[role="alert"],
+            .components-reconnect-modal,
+            .reconnect-modal,
+            .blazor-error-ui {
+                display: none !important;
+            }
+            
+            .button-group {
+                margin-top: 20px;
+                display: flex;
+                justify-content: flex-start;
+            }
+
+            .btn-custom {
+                background-color: #17a2b8;
+                color: white;
+                border: none;
+                padding: 10px 20px;
+                border-radius: 5px;
+                font-size: 16px;
+                transition: background-color 0.3s ease, opacity 0.3s ease;
+            }
+
+                .btn-custom:hover {
+                    background-color: #138496;
+                }
+
+            .ms-2 {
+                margin-left: 10px;
+            }
+
+            .badge {
+                padding: 0.5em 1em;
+                border-radius: 12px;
+                font-size: 0.9em;
+                font-weight: bold;
+                display: inline-flex;
+                align-items: center;
+                transition: transform 0.2s ease;
+            }
+
+                .badge i {
+                    margin-right: 0.5em;
+                }
+
+                .badge:hover {
+                    transform: scale(1.05);
+                }
+
+            .header-title {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                background-color: #0861F2;
+                padding: 5px 5px 0 5px;
+                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+                border-radius: 8px;
+            }
+
+                .header-title h3 {
+                    color: white;
+                    font-size: 1.42rem;
+                    font-weight: 600;
+                    letter-spacing: 0.05em;
+                    align-items: center;
+                }
+
+            .reconnect-modal {
+                display: none !important;
+            }
+
+            /* Dark mode styles */
+            .dark-mode {
+                --background-color: #3a3a3a;
+                --text-color: #ffffff;
+                --header-color: #2e2e2e;
+                --button-bg-color: #0EBBBF; /* Brighter red E12E1A */
+                --nav-link-color: #5A8DEE; /* Brighter blue */
+                --icon-color: #FFFFFF; /* Brighter icon color */
+                --icon-hover-color: #FFD700; /* Brighter on hover (gold-like color) */
+            }
+
+                .dark-mode .btn-custom {
+                    background-color: var(--button-bg-color) !important; /* Brighter red */
+                    color: var(--text-color) !important;
+                    border-color: var(--button-bg-color) !important;
+                }
+
+                    .dark-mode .btn-custom:hover {
+                        background-color: #64CDC5 !important; /* Brighter hover color */
+                    }
+
+                .dark-mode .nav-link.active {
+                    background-color: var(--nav-link-color) !important; /* Brighter blue */
+                    color: var(--text-color) !important;
+                }
+
+                    .dark-mode .nav-link.active:hover {
+                        background-color: #82B1FF !important; /* Brighter hover color for nav link */
+                    }
+
+                .dark-mode .nav-icon {
+                    color: #ffffff !important; /* Ensure icon color is white in dark mode */
+                }
+
+            .main-header {
+                background-color: var(--header-color) !important;
+            }
+
+            /* Ensure icons are bright in dark mode */
+            .dark-mode .navbar-search, .fa-expand-arrows-alt, .fa-th-large {
+                color: var(--icon-color) !important;
+            }
+
+            /* Hover effect for icons in dark mode */
+            .dark-mode .nav-link:hover .navbar-search, .fa-expand-arrows-alt, .fa-th-large {
+                color: var(--icon-hover-color) !important; /* Gold-like color when hovering */
+            }
+
+            /* If the icon is used elsewhere, ensure brightness */
+            .dark-mode .fas, .dark-mode .far {
+                color: var(--icon-color) !important;
+            }
+
+                /* Hover for search and fullscreen icons */
+                .dark-mode .fas.fa-search:hover, .dark-mode .fas.fa-expand-arrows-alt:hover {
+                    color: var(--icon-hover-color) !important;
+                }
+
+            /* Ensure the theme toggle button icon always has a yellow color without a border */
+            .theme-toggle-button {
+                background-color: transparent;
+                border: none !important; /* Remove the border */
+                box-shadow: none !important; /* Remove any shadow that might appear */
+                padding: 5px;
+                cursor: pointer;
+            }
+
+                .theme-toggle-button i {
+                    color: #FFD700 !important; /* Set the icon color to yellow */
+                    font-size: 1.5rem;
+                    transition: color 0.3s ease;
+                }
+
+                .theme-toggle-button:hover i {
+                    color: #FFC300 !important; /* Slightly brighter yellow on hover */
+                }
+
+                .theme-toggle-button:focus {
+                    outline: none !important; /* Remove focus outline */
+                }
+
+            /* Dropdown Menu Container with Light Background */
+            .dropdown-menu-container {
+                position: absolute;
+                top: 100%;
+                left: 0;
+                z-index: 1000;
+                width: 220px;
+                padding: 10px 0;
+                background-color: #ffffff;
+                border: 1px solid #e0e0e0;
+                border-radius: 6px;
+                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+                transition: opacity 0.3s ease, transform 0.2s ease;
+                opacity: 1;
+                transform: translateY(10px);
+            }
+
+            /* Individual Dropdown Items */
+            .dropdown-item {
+                padding: 10px 15px;
+                font-size: 16px;
+                color: #333333;
+                background-color: #ffffff;
+                cursor: pointer;
+                transition: background-color 0.2s ease, color 0.2s ease;
+                margin: 0 10px;
+                border-radius: 4px;
+            }
+
+                /* Hover Effect */
+                .dropdown-item:hover {
+                    background-color: #f2f2f2;
+                    color: #333333;
+                }
+
+            /* Button styling */
+            .search-container button.btn-primary {
+                border-radius: 5px;
+                background-color: #007bff;
+                color: #ffffff;
+                border: none;
+                padding: 8px 16px;
+                transition: background-color 0.3s ease, box-shadow 0.2s ease;
+            }
+
+                /* Hover effect for the button */
+                .search-container button.btn-primary:hover {
+                    background-color: #0056b3;
+                    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+                }
+
+            /* Dark mode adjustments */
+            .dark-mode .dropdown-menu-container {
+                background-color: #333333; /* Dark background */
+                border-color: #555555; /* Darker border */
+                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5); /* Darker shadow */
+            }
+
+            /* Dropdown items in dark mode */
+            .dark-mode .dropdown-item {
+                color: #ffffff; /* White text */
+                background-color: #333333; /* Dark background */
+            }
+
+                /* Dark mode hover effect */
+                .dark-mode .dropdown-item:hover {
+                    background-color: #555555; /* Lighter dark on hover */
+                    color: #ffffff; /* Ensure white text */
+                }
+
+            section {
+                margin-bottom: 0;
+                padding: 0;
+            }
+
+            .card-body {
+                padding: 5px;
+            }
+
+            /* Styling the table header to improve readability */
+            .fc-day-header {
+                background-color: #17A2B8 !important; /* Blue background for the headers */
+                color: white !important; /* White text for readability */
+                padding: 5px !important; /* Adding padding for better spacing */
+                border: 1px solid #ffffff !important; /* White borders around headers */
+            }
+
+            .fc-today {
+                background-color: #ffeb3b !important; /* Use a yellow shade or any color you prefer */
+                color: #000 !important; /* Ensure the text remains readable */
+            }
+
+            .system-message {
+                background-color: #ffeb3b !important; /* Màu vàng */
+            }
+
+            .academic-message {
+                background-color: #f44336 !important; /* Màu đỏ */
+            }
+
+            .library-message {
+                background-color: #2196f3 !important; /* Màu xanh dương */
+            }
+
+            .hostel-message {
+                background-color: #4caf50 !important; /* Màu xanh lá */
+            }
+
+            .frontoffice-message {
+                background-color: #ff9800 !important; /* Màu cam */
+            }
+
+            .systemsetting-message {
+                background-color: #9c27b0 !important; /* Màu tím */
+            }
+
+            .default-message {
+                background-color: #e0e0e0 !important; /* Màu xám mặc định */
+            }
+
+            /* Chế độ sáng - màu nền sáng */
+            .card {
+                background-color: #C1E9F2;
+            }
+
+            /* Chế độ tối - màu nền tối */
+            .dark-mode .card {
+                background-color: #333333; /* Màu nền tối */
+                color: #FFFFFF; /* Màu chữ sáng */
+            }
+
+            .dark-mode .card-header {
+                background-color: #444444; /* Màu header tối hơn */
+                color: #FFFFFF;
+            }
+
+            .dark-mode .card-footer {
+                background-color: #444444; /* Màu footer tối hơn */
+                color: #FFFFFF;
+            }
+
+            .dark-mode .direct-chat-text {
+                background-color: #555555; /* Màu nền tin nhắn tối */
+                color: #FFFFFF;
+            }
+
+            /*Left - Right Message*/
+            .direct-chat-msg {
+                margin-bottom: 10px;
+                display: flex;
+                align-items: flex-start;
+            }
+
+                /* Messages from the current user (right-aligned) */
+                .direct-chat-msg.right {
+                    flex-direction: row-reverse;
+                    text-align: right;
+                }
+
+                /* Messages from other users (left-aligned) */
+                .direct-chat-msg.left {
+                    text-align: left;
+                }
+
+            /* Profile images */
+            .direct-chat-img {
+                width: 40px;
+                height: 40px;
+                border-radius: 50%;
+                margin-right: 10px;
+            }
+
+            .direct-chat-img-right {
+                width: 40px;
+                height: 40px;
+                border-radius: 50%;
+                margin-left: 10px;
+            }
+
+            /* Chat bubble wrapper for the current user's messages */
+            .direct-chat-text-wrapper-right {
+                background-color: #d1f7c4; /* Light green for current user's messages */
+                border-radius: 15px 15px 0 15px; /* Rounded with arrow on the left */
+                padding: 10px;
+                margin-left: 10px;
+                max-width: 60%;
+            }
+
+            /* Chat bubble wrapper for other users' messages */
+            .direct-chat-text-wrapper-left {
+                background-color: #f1f1f1; /* Light gray for other users' messages */
+                border-radius: 15px 15px 15px 0; /* Rounded with arrow on the right */
+                padding: 10px;
+                margin-right: 10px;
+                max-width: 60%;
+            }
+
+            /* Text styling inside the bubbles for the current user */
+            .direct-chat-text-right {
+                color: #333;
+                text-align: justify;
+            }
+
+            /* Text styling inside the bubbles for other users */
+            .direct-chat-text-left {
+                color: #000;
+                text-align: justify;
+            }
+
+            /* Name styling */
+            .direct-chat-name-left, .direct-chat-name-right {
+                font-weight: bold;
+                font-size: 14px;
+            }
+
+            /* Timestamp styling */
+            .direct-chat-timestamp {
+                font-size: 12px;
+                color: #999;
+            }
+
+            /* Ensure the whole message thread scrolls properly */
+            .direct-chat-messages {
+                overflow-y: auto;
+                padding: 5px;
+            }
+
+            .emoji-picker {
+                border: 1px solid #ccc;
+                border-radius: 10px;
+                padding: 10px;
+                background-color: #f1f1f1;
+                max-width: 300px;
+                max-height: 200px;
+                overflow-y: auto;
+                display: flex;
+                flex-wrap: wrap;
+            }
+
+            .emoji {
+                font-size: 24px;
+                margin: 5px;
+                cursor: pointer;
+                transition: transform 0.2s ease;
+            }
+
+                .emoji:hover {
+                    transform: scale(1.2);
+                }
+
+
+            .chat-header {
+                background-color: #007bff; /* Màu nền xanh cho tiêu đề */
+                color: white; /* Màu chữ trắng */
+                padding: 10px; /* Khoảng cách padding */
+                border-radius: 8px 8px 0 0; /* Bo góc trên của card */
+                display: flex;
+                justify-content: space-between; /* Khoảng cách đều giữa tiêu đề và nút công cụ */
+                align-items: center; /* Canh giữa theo chiều dọc */
+            }
+
+                .chat-header h3 {
+                    font-size: 1.5rem; /* Kích thước chữ tiêu đề */
+                    font-weight: bold; /* In đậm */
+                    margin: 0; /* Xóa khoảng cách */
+                    display: flex;
+                    align-items: center; /* Canh giữa icon và chữ */
+                }
+
+                    .chat-header h3 i {
+                        margin-right: 8px; /* Khoảng cách giữa biểu tượng và chữ */
+                    }
+
+            .card-tools {
+                display: flex;
+                align-items: center;
+                margin-left: auto; /* Đẩy toàn bộ các nút sát sang phải */
+            }
+
+            .btn-tool {
+                font-size: 1.4rem; /* Tăng kích thước của icon */
+                margin-right: 5px; /* Thêm khoảng cách nhỏ giữa các nút */
+                color: white; /* Đảm bảo màu icon vẫn là màu trắng */
+            }
+
+            /*File Input*/
+            /* Tạo container để chứa InputFile và button */
+            .file-input-container {
+                display: flex;
+                align-items: center; /* Đảm bảo hai phần tử cùng nằm trên một hàng và căn giữa theo chiều dọc */
+                gap: 10px; /* Khoảng cách giữa InputFile và button */
+            }
+
+            /* Điều chỉnh InputFile */
+            .file-input-custom {
+                width: 300px; /* Chiều rộng tùy chỉnh của InputFile */
+                padding: 5px; /* Tạo không gian bên trong */
+                border-radius: 5px; /* Bo góc để trông mềm mại hơn */
+                border: 1px solid #ccc; /* Đường viền nhẹ */
+                align-items: center;
+                background-color: ghostwhite;
+            }
+
+            /*Access Denied*/
+            .access-denied-container {
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+                height: 100vh;
+                background-color: #f8f9fa; /* Light background */
+                text-align: center;
+            }
+
+            .access-denied-header {
+                padding: 20px;
+                border-radius: 10px;
+                background-color: #fff;
+                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            }
+
+            .access-denied-title {
+                font-size: 3rem;
+                font-weight: bold;
+                margin-bottom: 10px;
+            }
+
+            .access-denied-message {
+                font-size: 1.25rem;
+                margin-bottom: 20px;
+                color: #dc3545; /* Light red */
+            }
+
+            .access-denied-actions {
+                margin-top: 20px;
+            }
+
+                .access-denied-actions .btn {
+                    padding: 10px 20px;
+                    font-size: 1rem;
+                    border-radius: 25px;
+                }
+
+                /*chế độ tối chat box*/
+            /* Styles for Dark Mode */
+            .dark-mode .direct-chat-name-left,
+           .dark-mode .direct-chat-name-right {
+                color: black; /* Set to white or a light color for better contrast */
+            }
+
+            .dark-mode .direct-chat-messages{
+                background-color: #AEB4B4;
+            }
+
+        </style>
+    }
+    else if (NavigationManager.Uri.Contains("/Account/Register"))
+    {
+        <base href="/" />
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700&display=fallback">
+        <link rel="stylesheet" href="https://code.ionicframework.com/ionicons/2.0.1/css/ionicons.min.css">
+        <link rel="stylesheet" href="AdminLTE/plugins/fontawesome-free/css/all.min.css">
+        <link rel="stylesheet" href="AdminLTE/plugins/tempusdominus-bootstrap-4/css/tempusdominus-bootstrap-4.min.css">
+        <link rel="stylesheet" href="AdminLTE/plugins/icheck-bootstrap/icheck-bootstrap.min.css">
+        <link rel="stylesheet" href="AdminLTE/plugins/jqvmap/jqvmap.min.css">
+        <link rel="stylesheet" href="AdminLTE/dist/css/adminlte.min.css"> 
+        <link rel="stylesheet" href="AdminLTE/plugins/overlayScrollbars/css/OverlayScrollbars.min.css">
+        <link rel="stylesheet" href="AdminLTE/plugins/daterangepicker/daterangepicker.css">
+        <link rel="stylesheet" href="AdminLTE/plugins/summernote/summernote-bs4.min.css">
+        <link rel="stylesheet" href="app.css">
+        <link rel="stylesheet" href="StudentsManagement.styles.css" />
+        <!-- Load specific styles for the register page -->
+        @* <link rel="stylesheet" href="/css/register.css"> *@
+        <style>
+            body > div[role="alert"],
+            .components-reconnect-modal,
+            .reconnect-modal,
+            .blazor-error-ui {
+                display: none !important;
+            }
+            /* Custom styles specific for the register page */
+            .register-page {
+                background-color: #f8f9fa;
+                min-height: 100vh;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+            }
+
+            .register-form-container {
+                padding: 20px;
+                background-color: #fff;
+                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+                border-radius: 8px;
+            }
+
+            .register-page h1 {
+                color: #0861F2;
+                font-size: 2rem;
+                font-weight: 700;
+                text-align: center;
+                margin-bottom: 20px;
+            }
+
+            .register-page .form-group label {
+                font-weight: bold;
+            }
+
+            .register-page input {
+                margin-bottom: 15px;
+                padding: 10px;
+                border-radius: 5px;
+                border: 1px solid #ccc;
+                width: 100%;
+            }
+
+            .overlay-error {
+                position: fixed;
+                top: 20px;
+                left: 50%;
+                transform: translateX(-50%);
+                background-color: red !important; /* Màu nền đỏ với độ trong suốt */
+                color: yellow !important;
+                padding: 10px 20px;
+                border-radius: 5px;
+                z-index: 1000; /* Đảm bảo thông báo xuất hiện trên các phần tử khác */
+                width: auto;
+                max-width: 90%; /* Để giới hạn chiều rộng khi cần */
+                text-align: center;
+                font-size: 0.9rem;
+                box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2); /* Hiệu ứng đổ bóng nhẹ */
+            }
+
+
+
+        </style>
+    }
 
     <HeadOutlet />
 </head>
@@ -33,11 +624,9 @@
 <body class="@GetBodyClass()">
     <Routes />
 
-    <script src="_framework/blazor.web.js"></script>
-
-    @if (!NavigationManager.Uri.Contains("/Account/Login"))
+    @if (!NavigationManager.Uri.Contains("/Account/Login") && !NavigationManager.Uri.Contains("/Account/Register"))
     {
-        <!-- Load AdminLTE scripts only for non-login pages -->
+        <!-- Load AdminLTE scripts only for non-login and non-register pages -->
         <script src="AdminLTE/plugins/jquery/jquery.min.js"></script>
         <script src="AdminLTE/plugins/jquery-ui/jquery-ui.min.js"></script>
         <script src="AdminLTE/plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
@@ -49,14 +638,231 @@
         <script src="AdminLTE/plugins/overlayScrollbars/js/jquery.overlayScrollbars.min.js"></script>
         <script src="AdminLTE/dist/js/adminlte.js"></script>
         <script src="AdminLTE/dist/js/pages/dashboard.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+        <script>
+            function toggleTheme() {
+                // Toggle dark mode class on the body
+                document.body.classList.toggle('dark-mode');
+
+                // Determine the current theme
+                const isDarkMode = document.body.classList.contains('dark-mode');
+
+                // Update the icon based on the current theme
+                const themeIcon = document.getElementById('theme-icon');
+                if (isDarkMode) {
+                    themeIcon.classList.remove('fa-lightbulb');
+                    themeIcon.classList.add('fa-moon'); // Change to moon icon in dark mode
+                } else {
+                    themeIcon.classList.remove('fa-moon');
+                    themeIcon.classList.add('fa-lightbulb'); // Change to lightbulb icon in light mode
+                }
+
+                // Store the current theme in localStorage
+                const currentTheme = isDarkMode ? 'dark-mode' : 'light-mode';
+                localStorage.setItem('theme', currentTheme);
+            }
+
+            // Load the saved theme and update the icon on page load
+            window.onload = function () {
+                const savedTheme = localStorage.getItem('theme') || 'light-mode';
+                document.body.classList.add(savedTheme);
+
+                // Update the icon based on the loaded theme
+                const themeIcon = document.getElementById('theme-icon');
+                if (savedTheme === 'dark-mode') {
+                    themeIcon.classList.remove('fa-lightbulb');
+                    themeIcon.classList.add('fa-moon');
+                } else {
+                    themeIcon.classList.remove('fa-moon');
+                    themeIcon.classList.add('fa-lightbulb');
+                }
+            };
+
+        </script>
+
+        <script>
+            function createCourseProgressChart(completedYears, remainingYears) {
+                var ctx = document.getElementById('courseProgressChart').getContext('2d');
+                new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Completed', 'Remaining'],
+                        datasets: [{
+                            data: [completedYears, remainingYears],
+                            backgroundColor: ['#4caf50', '#f44336'],
+                        }]
+                    }
+                });
+            }
+
+            function createStudentsChart() {
+                var ctx = document.getElementById('revenue-chart-canvas').getContext('2d');
+                new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: ['January', 'February', 'March', 'April'],
+                        datasets: [{
+                            label: 'Students',
+                            data: [30, 40, 45, 60],
+                            borderColor: 'rgba(75, 192, 192, 1)',
+                            fill: false
+                        }]
+                    }
+                });
+            }
+        </script>
+
+        <script>
+            // Disable the import button to prevent multiple clicks
+            function disableImportButton() {
+                const importButton = document.getElementById('importButton');
+                if (importButton) {
+                    importButton.disabled = true;
+                }
+            }
+
+            // Re-enable the import button after the import completes
+            function enableImportButton() {
+                const importButton = document.getElementById('importButton');
+                if (importButton) {
+                    importButton.disabled = false;
+                }
+            }
+
+            // JavaScript function to clear the file input
+            function clearFileInput(inputId) {
+                const input = document.getElementById(inputId);
+                if (input) {
+                    input.value = ''; // Clear the file input value
+                }
+            }
+
+            // Custom alert function for debugging
+            window.alert = function (message) {
+                console.log("Alert called with message: " + message);
+                alert(message);
+            };
+
+            // Function to handle file download
+            window.downloadFile = (fileName, mimeType, byteArray) => {
+                var blob = new Blob([byteArray], { type: mimeType });
+                var link = document.createElement('a');
+                link.href = window.URL.createObjectURL(blob);
+                link.download = fileName;
+                link.click();
+                window.URL.revokeObjectURL(link.href);
+            };
+        </script>
+
+        <!-- FullCalendar JS -->
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.10.2/fullcalendar.min.js"></script>
+
+        <script>
+            window.initializeCalendar = () => {
+                if (!$('#calendar').hasClass('initialized')) {
+                    $('#calendar').fullCalendar({
+                        header: {
+                            left: 'prev,next today',
+                            center: 'title',
+                            right: 'month,agendaWeek,agendaDay'
+                        },
+                        editable: true,
+                        height: 'parent', // This will ensure the calendar fills the available space
+                        events: [
+                            {
+                                title: 'Event 1',
+                                start: '2024-10-26',
+                                color: '#ffc107' // Yellow for this event
+                            },
+                            {
+                                title: 'Event 2',
+                                start: '2024-10-27',
+                                color: '#28a745' // Green for this event
+                            }
+                        ],
+                        droppable: true // Allows dragging and dropping of events
+                    });
+                    $('#calendar').addClass('initialized');
+                }
+            };
+        </script>
+
+        <script>
+            function scrollToBottom() {
+                var chatMessages = document.getElementById('chatMessages');
+                if (chatMessages) {
+                    chatMessages.scrollTop = chatMessages.scrollHeight;
+                }
+            }
+        </script>
+        
     }
+    <script src="/_framework/blazor.server.js" autostart="false"></script>
+    @* <script>
+        Blazor.start({
+            configureSignalR: function (builder) {
+                builder.serverTimeoutInMilliseconds = 120000; // 2 minutes
+                builder.keepAliveIntervalInMilliseconds = 30000; // 30 seconds
+            }
+        });
+    </script> *@
+    <script>
+        // Wait until the page is fully loaded before hiding reconnect elements
+        document.addEventListener("DOMContentLoaded", function () {
+            const reconnectModal = document.querySelector(".components-reconnect-modal");
+            if (reconnectModal) {
+                reconnectModal.style.display = "none";
+            }
+        });
+    </script>
+    <script>
+        function suppressBlazorReconnect() {
+            Blazor.start({
+                reconnectionHandler: {
+                    onConnectionDown: () => { }, // Suppress default reconnect message
+                    onConnectionUp: () => { },   // Optionally handle reconnection here
+                    onReconnectionStarting: () => { },
+                    onReconnectionFailed: () => { }
+                }
+            });
+        }
+
+        // Start Blazor with the custom handler on load
+        window.addEventListener('load', suppressBlazorReconnect);
+    </script>
+    <script>
+        window.downloadFile = function (fileName, contentType, content) {
+            const blob = new Blob([new Uint8Array(content)], { type: contentType });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = fileName;
+            a.click();
+            window.URL.revokeObjectURL(url);
+        };
+    </script>
+
+    
 </body>
 </html>
 
 @code {
     private string GetBodyClass()
     {
-        // Set different body class for the login page and the rest of the app
-        return NavigationManager.Uri.Contains("/Account/Login") ? "img js-fullheight" : "hold-transition sidebar-mini layout-fixed";
+        // Check if the URL contains "/Account/Login" specifically, apply the class only for the login page.
+        if (NavigationManager.Uri.Contains("/Account/Login"))
+        {
+            return "img js-fullheight";
+        }
+
+        if (NavigationManager.Uri.Contains("/Account/Register"))
+        {
+            return "";
+        }
+
+        // For other pages, keep the default body class
+        return "hold-transition sidebar-mini layout-fixed";
     }
 }

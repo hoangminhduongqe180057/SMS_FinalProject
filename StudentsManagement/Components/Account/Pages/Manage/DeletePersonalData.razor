@@ -64,7 +64,15 @@
             return;
         }
 
-        var result = await UserManager.DeleteAsync(user);
+        // Reload the user instance to avoid tracking conflicts
+        var userToDelete = await UserManager.FindByIdAsync(user.Id);
+        if (userToDelete == null)
+        {
+            message = "Error: User not found.";
+            return;
+        }
+
+        var result = await UserManager.DeleteAsync(userToDelete);
         if (!result.Succeeded)
         {
             throw new InvalidOperationException("Unexpected error occurred deleting user.");
@@ -72,11 +80,12 @@
 
         await SignInManager.SignOutAsync();
 
-        var userId = await UserManager.GetUserIdAsync(user);
+        var userId = await UserManager.GetUserIdAsync(userToDelete);
         Logger.LogInformation("User with ID '{UserId}' deleted themselves.", userId);
 
         RedirectManager.RedirectToCurrentPage();
     }
+
 
     private sealed class InputModel
     {

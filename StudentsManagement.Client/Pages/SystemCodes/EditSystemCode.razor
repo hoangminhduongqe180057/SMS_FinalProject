@@ -1,16 +1,18 @@
 ﻿@page "/systemCode/edit/{id:int}"
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
 @using StudentsManagement.Client.Services
 @using StudentsManagement.Shared.Models
 @inject NavigationManager navigation;
 @inject IJSRuntime JSRuntime
-@rendermode InteractiveServer
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
 
 <h3>Update System Code</h3>
 
 <hr />
 <div class="row">
     <div class="col-md-12">
-        <EditForm Model="systemCodeObj" OnValidSubmit="UpdateSystemCode" FormName="updateSystemCode">
+        <EditForm Model="systemCodeObj" OnValidSubmit="UpdateSystemCode" FormName="updateSystemCode" OnInvalidSubmit="HandleInvalidSubmit">
             <DataAnnotationsValidator />
             <ValidationSummary />
             <div class="col-md-12">
@@ -32,7 +34,7 @@
                     </div>
                 </div>
                 <div class="form-group mt-4">
-                    <button type="submit" class="btn btn-primary">Update System Code</button>
+                    <button type="submit" class="btn btn-primary">Save System Code</button>
                     <button type="button" @onclick="()=>Cancel()" class="btn btn-danger">Back to list</button>
                 </div>
             </div>
@@ -46,6 +48,7 @@
 
     [Parameter]
     public int id { get; set; }
+    private string serverErrorMessage;
 
     protected override async Task OnInitializedAsync()
     {
@@ -62,7 +65,7 @@
         try
         {
             var rs = await SystemCodeService.UpdateAsync(systemCodeObj);
-            navigation.NavigateTo("/systemCodes-list");
+            navigation.NavigateTo("/systemCodes-list", forceLoad: true);
         }
         catch(Exception ex)
         {
@@ -72,6 +75,10 @@
 
     public void Cancel()
     {
-        navigation.NavigateTo("/systemCodes-list");
+        navigation.NavigateTo("/systemCodes-list", forceLoad: true);
+    }
+    private void HandleInvalidSubmit(EditContext editContext)
+    {
+        serverErrorMessage = "Please fill in all required fields.";
     }
 }

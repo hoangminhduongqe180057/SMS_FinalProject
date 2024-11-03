@@ -1,0 +1,126 @@
+﻿@page "/user/detail/{id}"
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
+@using Microsoft.AspNetCore.Identity
+@using StudentsManagement.Client.Services
+@using StudentsManagement.Data
+@using StudentsManagement.Services
+@using StudentsManagement.Shared.Models
+@inject NavigationManager navigation;
+@inject IJSRuntime JSRuntime;
+@inject UserRepository userRepository;
+@inject HttpClient httpClient;
+@inject SystemCodeDetailService SystemCodeDetailService;
+@inject UserManager<ApplicationUser> UserManager;
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+
+<h3>View User Detail</h3>
+
+<hr />
+<div class="alert alert-danger" role="alert" style="display: @(showError ? "block" : "none")">
+    @alertMessage
+</div>
+
+<div class="row">
+    <!-- Left column for Photo -->
+    <div class="col-md-3 d-flex justify-content-center align-items-center">
+        @if (!string.IsNullOrEmpty(userObj?.Photo))
+        {
+            <img src="/Images/@userObj.Photo" alt="User Photo" style="width: 200px; height: 200px; border-radius: 50%; object-fit: cover;" />
+        }
+        else
+        {
+            <span>No Photo Available</span>
+        }
+    </div>
+
+    <!-- Right column for User Information -->
+    <div class="col-md-9">
+        <table class="table">
+            <tr>
+                <th>Full Name</th>
+                <td>@userObj.FirstName @userObj.MiddleName @userObj.LastName</td>
+            </tr>
+            <tr>
+                <th>Gender</th>
+                <td>@Genders.FirstOrDefault(g => g.Id == userObj.GenderId)?.Description</td>
+            </tr>
+            <tr>
+                <th>Email Address</th>
+                <td>@userObj.Email</td>
+            </tr>
+            <tr>
+                <th>Phone Number</th>
+                <td>@userObj.PhoneNumber</td>
+            </tr>
+            <tr>
+                <th>Roles</th>
+                <td>
+                    @if (userRoles != null && userRoles.Any())
+                    {
+                        @foreach (var role in userRoles)
+                        {
+                            <span class="badge bg-info text-dark me-2">@role</span>
+                        }
+                    }
+                    else
+                    {
+                        <span class="badge bg-secondary">No Roles</span>
+                    }
+                </td>
+            </tr>
+        </table>
+
+        <div class="form-group mt-4">
+            <button type="button" @onclick="Cancel" class="btn btn-danger">Back to list</button>
+        </div>
+    </div>
+</div>
+
+
+@code {
+    [Parameter]
+    public string id { get; set; }
+    private bool showError = false;
+    private string alertMessage = string.Empty;
+
+    public ApplicationUser userObj { get; set; } = new ApplicationUser();
+
+    private List<SystemCodeDetail> Genders = new List<SystemCodeDetail>();
+    private List<string> userRoles = new List<string>(); // Danh sách vai trò của người dùng
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Tải thông tin về giới tính
+        Genders = await SystemCodeDetailService.GetByCodeAsync("Gender");
+
+        // Tải thông tin người dùng và vai trò
+        await LoadUser();
+    }
+
+    private async Task LoadUser()
+    {
+        userObj = await userRepository.GetByIdAsync(id);
+        if (userObj == null)
+        {
+            ShowBlazorAlert("No user found.");
+            navigation.NavigateTo("/users-list", forceLoad: true);
+        }
+        else
+        {
+            // Lấy danh sách các vai trò của người dùng
+            userRoles = (await UserManager.GetRolesAsync(userObj)).ToList();
+        }
+    }
+
+    public void Cancel()
+    {
+        navigation.NavigateTo("/users-list", forceLoad: true);
+    }
+
+    private void ShowBlazorAlert(string message)
+    {
+        showError = true;
+        alertMessage = message;
+    }
+}

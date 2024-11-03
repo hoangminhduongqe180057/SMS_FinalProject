@@ -3,30 +3,33 @@
 @using System.Text
 @using Microsoft.AspNetCore.Identity
 @using Microsoft.AspNetCore.WebUtilities
+@using Mono.TextTemplating
 @using StudentsManagement.Data
 
 @inject UserManager<ApplicationUser> UserManager
 @inject IEmailSender<ApplicationUser> EmailSender
 @inject NavigationManager NavigationManager
 @inject IdentityRedirectManager RedirectManager
+<PageTitle>Registration Pending Approval</PageTitle>
 
-<PageTitle>Register confirmation</PageTitle>
-
-<h1>Register confirmation</h1>
-
-<StatusMessage Message="@statusMessage" />
-
-@if (emailConfirmationLink is not null)
-{
-    <p>
-        This app does not currently have a real email sender registered, see <a href="https://aka.ms/aspaccountconf">these docs</a> for how to configure a real email sender.
-        Normally this would be emailed: <a href="@emailConfirmationLink">Click here to confirm your account</a>
-    </p>
-}
-else
-{
-    <p>Please check your email to confirm your account.</p>
-}
+<div class="container h-100 d-flex justify-content-center align-items-center">
+    <div class="card shadow-lg border-0 rounded-lg p-4" style="max-width: 600px; background: linear-gradient(145deg, #E0F7FA, #B2EBF2); box-shadow: 0px 10px 20px rgba(0, 0, 0, 0.15);">
+        <div class="text-center">
+            <img src="https://cdn-icons-png.flaticon.com/512/2088/2088617.png" alt="Clock Icon" width="100" height="100" class="mb-3" />
+            <h3 class="text-dark" style="color: #0D47A1;">Your Registration is Being Reviewed</h3>
+            <p class="mt-3" style="color: #01579B;">
+                Thank you for registering! Your account is currently under review by our administration team. We are working to approve your registration as soon as possible.
+            </p>
+            <p style="color: #01579B;">
+                You will receive an email notification once your account has been approved and activated. We appreciate your patience in the meantime.
+            </p>
+            <!-- Chuyển từ nút bấm thành thẻ <a> để điều hướng trực tiếp -->
+            <a class="btn btn-lg mt-4" style="background-color: #4CAF50; color: white; border-color: #4CAF50;" href="/Account/Login">
+                Return to Login
+            </a>
+        </div>
+    </div>
+</div>
 
 @code {
     private string? emailConfirmationLink;
@@ -45,7 +48,8 @@ else
     {
         if (Email is null)
         {
-            RedirectManager.RedirectTo("");
+            NavigationManager.NavigateTo("/");
+            return;
         }
 
         var user = await UserManager.FindByEmailAsync(Email);
@@ -64,5 +68,10 @@ else
                 NavigationManager.ToAbsoluteUri("Account/ConfirmEmail").AbsoluteUri,
                 new Dictionary<string, object?> { ["userId"] = userId, ["code"] = code, ["returnUrl"] = ReturnUrl });
         }
+    }
+
+    private void RedirectToHome()
+    {
+        NavigationManager.NavigateTo("Account/Login");
     }
 }

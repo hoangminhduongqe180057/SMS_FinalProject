@@ -1,16 +1,18 @@
 ﻿@page "/add-systemCodeDetail"
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
 @using StudentsManagement.Client.Services
 @using StudentsManagement.Shared.Models
 @inject NavigationManager navigation;
 @inject IJSRuntime JSRuntime
-@rendermode InteractiveServer
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
 
 <h3>Add New System Code Detail</h3>
 
 <hr />
 <div class="row">
     <div class="col-md-12">
-        <EditForm Model="systemCodeDetailObj" OnValidSubmit="CreateSystemCodeDetail" FormName="addSystemCodeDetail">
+        <EditForm Model="systemCodeDetailObj" OnValidSubmit="CreateSystemCodeDetail" FormName="addSystemCodeDetail" OnInvalidSubmit="HandleInvalidSubmit">
             <DataAnnotationsValidator />
             <ValidationSummary />
             <div class="col-md-12">
@@ -58,6 +60,7 @@
     [SupplyParameterFromForm]
     public SystemCodeDetail systemCodeDetailObj { get; set; } = new();
     List<SystemCode> SystemCodes = new List<SystemCode>();
+    private string serverErrorMessage;
 
     protected override async Task OnInitializedAsync()
     {
@@ -69,7 +72,7 @@
         try
         {
             var rs = await SystemCodeDetailService.AddAsync(systemCodeDetailObj);
-            navigation.NavigateTo("/systemCodeDetails-list");
+            navigation.NavigateTo("/systemCodeDetails-list", forceLoad: true);
         }
         catch(Exception ex)
         {
@@ -79,6 +82,10 @@
 
     public void Cancel()
     {
-        navigation.NavigateTo("/systemCodeDetails-list");
+        navigation.NavigateTo("/systemCodeDetails-list", forceLoad: true);
+    }
+    private void HandleInvalidSubmit(EditContext editContext)
+    {
+        serverErrorMessage = "Please fill in all required fields.";
     }
 }

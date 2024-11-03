@@ -1,16 +1,18 @@
 ﻿@page "/add-country"
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
 @using StudentsManagement.Client.Services
 @using StudentsManagement.Shared.Models
 @inject NavigationManager navigation;
 @inject IJSRuntime JSRuntime
-@rendermode InteractiveServer
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
 
 <h3>AddCountry</h3>
 
 <hr />
 <div class="row">
     <div class="col-md-12">
-        <EditForm Model="countryobj" OnValidSubmit="CreateCountry" FormName="addCountry">
+        <EditForm Model="countryobj" OnValidSubmit="CreateCountry" FormName="addCountry" OnInvalidSubmit="HandleInvalidSubmit">
             <DataAnnotationsValidator />
             <ValidationSummary />
             <div class="col-md-12">
@@ -43,6 +45,7 @@
 @code {
     [SupplyParameterFromForm]
     public Country countryobj { get; set; } = new();
+    private string serverErrorMessage;
 
     protected async Task CreateCountry()
     {
@@ -59,6 +62,10 @@
 
     public void Cancel()
     {
-        navigation.NavigateTo("/countries-list");
+        navigation.NavigateTo("/countries-list", forceLoad: true);
+    }
+    private void HandleInvalidSubmit(EditContext editContext)
+    {
+        serverErrorMessage = "Please fill in all required fields.";
     }
 }

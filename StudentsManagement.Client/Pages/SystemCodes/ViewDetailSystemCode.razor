@@ -1,0 +1,57 @@
+﻿@page "/systemCode/detail/{id:int}"
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
+@using StudentsManagement.Shared.Models
+@inject NavigationManager navigation;
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+
+<h3>View System Code</h3>
+
+<hr />
+<div class="row">
+    <div class="col-md-12">
+        <table class="table">
+            <tr>
+                <th>System Code</th>
+                <td>@systemCodeObj.Code</td>
+            </tr>
+            <tr>
+                <th>System Code Description</th>
+                <td>@systemCodeObj.Description</td>
+            </tr>
+        </table>
+    </div>
+    <div class="form-group">
+        <a class="btn btn-success" href="/systemCode/edit/@systemCodeObj.Id"> Update System Code </a>
+        <button type="button" @onclick="()=>Cancel()" class="btn btn-danger">Back to list</button>
+    </div>
+</div>
+
+@code {
+    [SupplyParameterFromForm]
+    public SystemCode systemCodeObj { get; set; } = new();
+
+    [Parameter]
+    public int id { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadSystemCode();
+    }
+
+    private async Task LoadSystemCode()
+    {
+        systemCodeObj = await SystemCodeService.GetByIdAsync(id);
+    }
+
+    protected async Task Delete()
+    {
+        var result = await SystemCodeService.DeleteAsync(id);
+        navigation.NavigateTo("/systemCodes-list", forceLoad: true);
+    }
+
+    public void Cancel()
+    {
+        navigation.NavigateTo("/systemCodes-list", forceLoad: true);
+    }
+}

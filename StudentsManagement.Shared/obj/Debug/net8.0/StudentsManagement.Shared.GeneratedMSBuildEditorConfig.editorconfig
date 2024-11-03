@@ -8,6 +8,6 @@ build_property.PlatformNeutralAssembly =
 build_property.EnforceExtendedAnalyzerRules = 
 build_property._SupportedPlatformList = Linux,macOS,Windows
 build_property.RootNamespace = StudentsManagement.Shared
-build_property.ProjectDir = D:\CHUYÊN NGÀNH 5\SWP391 - Software Project\StudentsManagement\StudentsManagement.Shared\
+build_property.ProjectDir = D:\CHUYÊN NGÀNH 5\Loại bỏ roleId\StudentsManagement\StudentsManagement.Shared\
 build_property.EnableComHosting = 
 build_property.EnableGeneratedComInterfaceComImportInterop = 

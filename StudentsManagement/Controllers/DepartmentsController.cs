@@ -5,7 +5,9 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using StudentsManagement.Client.Repository;
 using StudentsManagement.Data;
+using StudentsManagement.Services;
 using StudentsManagement.Shared.Models;
 
 namespace StudentsManagement.Controllers
@@ -15,10 +17,12 @@ namespace StudentsManagement.Controllers
     public class DepartmentsController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
+        private readonly IDepartmentRepository _departmentRepository;
 
-        public DepartmentsController(ApplicationDbContext context)
+        public DepartmentsController(ApplicationDbContext context, IDepartmentRepository departmentRepository)
         {
             _context = context;
+            _departmentRepository = departmentRepository;
         }
 
         // GET: api/Departments
@@ -97,12 +101,61 @@ namespace StudentsManagement.Controllers
             _context.Departments.Remove(department);
             await _context.SaveChangesAsync();
 
-            return NoContent();
+            return Ok(department); // Ensure it returns a JSON response, like the deleted department
         }
+
 
         private bool DepartmentExists(int id)
         {
             return _context.Departments.Any(e => e.Id == id);
+        }
+
+        [HttpGet("ExportDepartmentsToCsv")]
+        public async Task<IActionResult> ExportDepartmentsToCsv()
+        {
+            var csvBytes = await _departmentRepository.ExportToCsvAsync();
+            return File(csvBytes, "text/csv", "Departments.csv");
+        }
+
+        [HttpGet("Search")]
+        public async Task<ActionResult<List<Department>>> SearchDepartmentsAsync(
+            [FromQuery] string name, [FromQuery] string code)
+        {
+            var query = _context.Departments.AsQueryable();
+
+            // Apply filters
+
+            if (!string.IsNullOrWhiteSpace(name))
+                query = query.Where(s => (s.Name).Trim().Contains(name));
+
+            if (!string.IsNullOrWhiteSpace(code))
+                query = query.Where(s => (s.Code).Trim().Contains(code));
+
+            var departments = await query.ToListAsync();
+            return Ok(departments);
+        }
+
+        [HttpGet("paged")]
+        public async Task<ActionResult<PaginationModel<Department>>> GetPagedDepartmentsAsync(
+            [FromQuery] int pageNumber, [FromQuery] int pageSize,
+            [FromQuery] string? id, [FromQuery] string? name,
+            [FromQuery] string? code, [FromQuery] string? createBy,
+            [FromQuery] DateTime createOn,
+            [FromQuery] string? sortField,
+            [FromQuery] bool sortAscending = true)
+        {
+            var searchParameters = new SearchParameters
+            {
+                Name = name,
+                Code = code,
+                CreateBy = createBy,
+                CreateOn = createOn,
+                SortField = sortField,
+                SortAscending = sortAscending
+            };
+
+            var result = await _departmentRepository.GetPagedDepartmentsAsync(pageNumber, pageSize, searchParameters);
+            return Ok(result);
         }
     }
 }

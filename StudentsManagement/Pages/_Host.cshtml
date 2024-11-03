@@ -1,0 +1,44 @@
+﻿@page "/"
+@namespace StudentsManagement.Pages
+@using StudentsManagement.Components
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Students Management</title>
+    <base href="~/" />
+    <link rel="stylesheet" href="/css/bootstrap.min.css" />
+    <link href="/css/app.css" rel="stylesheet" />
+    <style>
+        /* Hide the reconnect message */
+        body > div[role="alert"] {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+    <app>
+        <component type="typeof(App)" render-mode="ServerPrerendered" />
+    </app>
+
+    <script src="/_framework/blazor.server.js" autostart="false"></script>
+    <script>
+        function suppressBlazorReconnect() {
+            Blazor.start({
+                reconnectionHandler: {
+                    onConnectionDown: () => { }, // Suppress default reconnect message
+                    onConnectionUp: () => { },   // Optionally handle reconnection here
+                    onReconnectionStarting: () => { },
+                    onReconnectionFailed: () => { }
+                }
+            });
+        }
+
+        // Start Blazor with the custom handler on load
+        window.addEventListener('load', suppressBlazorReconnect);
+    </script>
+
+</body>
+</html>

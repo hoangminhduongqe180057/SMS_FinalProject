@@ -2,6 +2,7 @@
 
 @using System.ComponentModel.DataAnnotations
 @using Microsoft.AspNetCore.Identity
+@using Microsoft.EntityFrameworkCore
 @using StudentsManagement.Data
 
 @inject UserManager<ApplicationUser> UserManager
@@ -11,26 +12,28 @@
 
 <PageTitle>Profile</PageTitle>
 
-<h3>Profile</h3>
+<h3 class="profile-header">Profile</h3>
 <StatusMessage />
 
-<div class="row">
-    <div class="col-md-6">
-        <EditForm Model="Input" FormName="profile" OnValidSubmit="OnValidSubmitAsync" method="post">
-            <DataAnnotationsValidator />
-            <ValidationSummary class="text-danger" role="alert" />
-            <div class="form-floating mb-3">
-                <input type="text" value="@username" class="form-control" placeholder="Please choose your username." disabled />
-                <label for="username" class="form-label">Username</label>
-            </div>
-            <div class="form-floating mb-3">
-                <InputText @bind-Value="Input.PhoneNumber" class="form-control" placeholder="Please enter your phone number." />
-                <label for="phone-number" class="form-label">Phone number</label>
-                <ValidationMessage For="() => Input.PhoneNumber" class="text-danger" />
-            </div>
-            <button type="submit" class="w-100 btn btn-lg btn-primary">Save</button>
-        </EditForm>
-    </div>
+<div class="profile-container">
+    <EditForm Model="Input" OnValidSubmit="OnValidSubmitAsync" FormName="profileForm">
+        <!-- Added FormName attribute -->
+        <DataAnnotationsValidator />
+        <ValidationSummary class="text-danger" role="alert" />
+
+        <div class="form-floating mb-3">
+            <label for="username" class="form-label">Username</label>
+            <input type="text" value="@username" class="form-control" placeholder="Please choose your username." disabled />
+        </div>
+
+        <div class="form-floating mb-3">
+            <label for="phone-number" class="form-label">Phone number</label>
+            <InputText @bind-Value="Input.PhoneNumber" class="form-control" placeholder="Please enter your phone number." />
+            <ValidationMessage For="() => Input.PhoneNumber" class="text-danger" />
+        </div>
+
+        <button type="submit" class="w-100 btn btn-primary">Save</button>
+    </EditForm>
 </div>
 
 @code {
@@ -46,6 +49,7 @@
 
     protected override async Task OnInitializedAsync()
     {
+        // Load the current user and set initial values for the form fields
         user = await UserAccessor.GetRequiredUserAsync(HttpContext);
         username = await UserManager.GetUserNameAsync(user);
         phoneNumber = await UserManager.GetPhoneNumberAsync(user);
@@ -55,17 +59,37 @@
 
     private async Task OnValidSubmitAsync()
     {
+        // Only update if the phone number has changed
         if (Input.PhoneNumber != phoneNumber)
         {
-            var setPhoneResult = await UserManager.SetPhoneNumberAsync(user, Input.PhoneNumber);
-            if (!setPhoneResult.Succeeded)
+            // Check if the new phone number is already in use by another user
+            var existingUserWithPhone = await UserManager.Users
+                .Where(u => u.PhoneNumber == Input.PhoneNumber && u.Id != user.Id).FirstOrDefaultAsync();
+
+            if (existingUserWithPhone != null)
             {
-                RedirectManager.RedirectToCurrentPageWithStatus("Error: Failed to set phone number.", HttpContext);
+                // Display error message if the phone number is already in use
+                RedirectManager.RedirectToCurrentPageWithStatus("Error: This phone number is already in use by another user.", HttpContext);
+                return;
+            }
+            // Reload user instance to avoid tracking conflicts
+            var userToUpdate = await UserManager.FindByIdAsync(user.Id);
+            if (userToUpdate != null)
+            {
+                // Set the new phone number
+                var setPhoneResult = await UserManager.SetPhoneNumberAsync(userToUpdate, Input.PhoneNumber);
+                if (!setPhoneResult.Succeeded)
+                {
+                    // Display error message if the update fails
+                    RedirectManager.RedirectToCurrentPageWithStatus("Error: Failed to set phone number.", HttpContext);
+                    return;
+                }
+
+                // Refresh the sign-in session
+                await SignInManager.RefreshSignInAsync(userToUpdate);
+                RedirectManager.RedirectToCurrentPageWithStatus("Your profile has been updated", HttpContext);
             }
         }
-
-        await SignInManager.RefreshSignInAsync(user);
-        RedirectManager.RedirectToCurrentPageWithStatus("Your profile has been updated", HttpContext);
     }
 
     private sealed class InputModel
@@ -75,3 +99,49 @@
         public string? PhoneNumber { get; set; }
     }
 }
+
+<style>
+    .profile-header {
+        text-align: center;
+        font-size: 1.5rem;
+        font-weight: bold;
+        margin-bottom: 20px;
+        color: #0DAFB2;
+    }
+
+    .profile-container {
+        background-color: #ffffff;
+        padding: 30px;
+        border-radius: 8px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        max-width: 500px;
+        margin: 0 auto;
+    }
+
+    .dark-mode .profile-container{
+        background-color: #3F474E;
+    }
+
+    .dark-mode .form-label{
+        color: white;
+    }
+
+    .dark-mode .form-control{
+        background-color: white;
+        color: black;
+    }
+    .form-label {
+        font-size: 1rem;
+        font-weight: 500;
+    }
+
+    .btn-primary {
+        background-color: #007bff;
+        border: none;
+        transition: background-color 0.3s ease;
+    }
+
+        .btn-primary:hover {
+            background-color: #0056b3;
+        }
+</style>

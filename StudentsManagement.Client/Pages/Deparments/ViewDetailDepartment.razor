@@ -1,0 +1,65 @@
+﻿@page "/department/detail/{id:int}"
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
+@using StudentsManagement.Shared.Models
+@inject NavigationManager navigation;
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+
+<h3>View Department Detail</h3>
+
+<hr />
+<div class="row">
+    <div class="col-md-12">
+        <table class="table">
+            <tr>
+                <th>Department Code</th>
+                <td>@departmentobj.Code</td>
+            </tr>
+            <tr>
+                <th>Department Name</th>
+                <td>@departmentobj.Name</td>
+            </tr>
+            <tr>
+                <th>Created By</th>
+                <td>@departmentobj.CreatedById</td>
+            </tr>
+            <tr>
+                <th>Created On</th>
+                <td>@departmentobj.CreatedOn.ToShortDateString()</td>
+            </tr>
+        </table>
+    </div>
+    <div class="form-group">
+        <a class="btn btn-success" href="/department/edit/@departmentobj.Id"> Update Department </a>
+        <button type="button" @onclick="()=>Cancel()" class="btn btn-danger">Back to list</button>
+    </div>
+</div>
+
+@code {
+    [SupplyParameterFromForm]
+    public Department departmentobj { get; set; } = new();
+
+    [Parameter]
+    public int id { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDepartment();
+    }
+
+    private async Task LoadDepartment()
+    {
+        departmentobj = await DepartmentService.GetByIdAsync(id);
+    }
+
+    protected async Task Delete()
+    {
+        var result = await DepartmentService.DeleteAsync(id);
+        navigation.NavigateTo("/departments-list", forceLoad: true);
+    }
+
+    public void Cancel()
+    {
+        navigation.NavigateTo("/departments-list", forceLoad: true);
+    }
+}

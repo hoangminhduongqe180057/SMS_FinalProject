@@ -12,15 +12,23 @@
 @inject NavigationManager NavigationManager
 @inject IdentityRedirectManager RedirectManager
 @inject UserManager<ApplicationUser> UserManager
+@inject IJSRuntime JSRuntime
+@inject IHttpContextAccessor HttpContextAccessor
 
 <section class="ftco-section">
-    @if (!string.IsNullOrEmpty(errorMessage))
-    {
-        <StatusMessage Message="@errorMessage" />
-    }
     <EditForm Model="Input" method="post" OnValidSubmit="LoginUser" FormName="login">
         <DataAnnotationsValidator />
-        <ValidationSummary class="text-danger" role="alert" />
+        @* @if (!string.IsNullOrEmpty(errorMessage))
+        {
+            <div class="alert alert-danger">@errorMessage</div>
+        } *@
+        @if (!string.IsNullOrEmpty(errorMessage))
+        {
+            <div class="alert alert-danger alert-overlay">
+                <span>@errorMessage</span>
+                <span class="close-btn" @onclick="() => errorMessage = null"></span>
+            </div>
+        } 
         <div class="container">
             <div class="row justify-content-center">
                 <div class="col-md-6 col-lg-4">
@@ -28,7 +36,7 @@
                         <h3 class="mb-4 text-center">Have an account?</h3>
                         <div class="form-group">
                             <label for="email" class="form-label">Email</label>
-                            <InputText @bind-Value="Input.Email" class="form-control" autocomplete="username" aria-required="true" placeholder="name@example.com" />
+                            <InputText @bind-Value="Input.Email" class="form-control" autocomplete="username" aria-required="true" placeholder="name@gmail.com" />
                             <ValidationMessage For="() => Input.Email" class="text-danger" />
                         </div>
                         <div class="form-group">
@@ -48,16 +56,16 @@
                             </div>
                         </div>
                         <div class="social d-flex justify-content-center text-center">
-                            <a href="Account/ForgotPassword" class="px-2 py-2 mr-md-1 rounded">Forgot your password?</a>
+                            <a href="/Account/ForgotPassword" class="px-2 py-2 mr-md-1 rounded">Forgot your password?</a>
                         </div>
                         <hr />
 
                         <div class="social d-flex justify-content-center text-center">
-                            <a href="@(NavigationManager.GetUriWithQueryParameters("Account/Register", new Dictionary<string, object?> { ["ReturnUrl"] = ReturnUrl }))" class=" px-2 py-2 mr-md-1 rounded">Register as a new user</a>
+                            <a href="@(NavigationManager.GetUriWithQueryParameters("/Account/Register", new Dictionary<string, object?> { ["ReturnUrl"] = ReturnUrl }))" class=" px-2 py-2 mr-md-1 rounded">Register as a new user</a>
                         </div>
                         <hr />
                         <div class="social d-flex justify-content-center text-center">
-                            <a href="Account/ResendEmailConfirmation" class="px-2 py-2 mr-md-1 rounded">Resend email confirmation</a>
+                            <a href="/Account/ResendEmailConfirmation" class="px-2 py-2 mr-md-1 rounded">Resend email confirmation</a>
                         </div>
 
                     </div>
@@ -66,11 +74,12 @@
         </div>
     </EditForm>
 </section>
+
 @code {
     private string? errorMessage;
 
-    [CascadingParameter]
-    private HttpContext HttpContext { get; set; } = default!;
+    // Removed CascadingParameter, use IHttpContextAccessor instead
+    private HttpContext? HttpContext => HttpContextAccessor.HttpContext;
 
     [SupplyParameterFromForm]
     private InputModel Input { get; set; } = new();
@@ -80,7 +89,7 @@
 
     protected override async Task OnInitializedAsync()
     {
-        if (HttpMethods.IsGet(HttpContext.Request.Method))
+        if (HttpContext != null && HttpMethods.IsGet(HttpContext.Request.Method))
         {
             // Clear the existing external cookie to ensure a clean login process
             await HttpContext.SignOutAsync(IdentityConstants.ExternalScheme);
@@ -89,29 +98,44 @@
 
     public async Task LoginUser()
     {
-        // This doesn't count login failures towards account lockout
-        // To enable password failures to trigger account lockout, set lockoutOnFailure: true
-        var result = await SignInManager.PasswordSignInAsync(Input.Email, Input.Password, Input.RememberMe, lockoutOnFailure: false);
+        var user = await UserManager.FindByEmailAsync(Input.Email);
+        if (user != null && user.AccountStatus == "Pending")
+        {
+            RedirectManager.RedirectTo("Account/RegisterConfirmation", new() { ["email"] = Input.Email });
+            return;
+        }
+        if (user != null)
+        {
+            if (user.AccountStatus == "Rejected")
+            {
+                Logger.LogWarning("User account was rejected!");
+                RedirectManager.RedirectTo("Account/Lockout");
+            }
 
-        if (result.Succeeded)
-        {
-            Logger.LogInformation("User logged in.");
-            RedirectManager.RedirectTo(ReturnUrl);
-        }
-        else if (result.RequiresTwoFactor)
-        {
-            RedirectManager.RedirectTo(
-                "Account/LoginWith2fa",
-                new() { ["returnUrl"] = ReturnUrl, ["rememberMe"] = Input.RememberMe });
-        }
-        else if (result.IsLockedOut)
-        {
-            Logger.LogWarning("User account locked out.");
-            RedirectManager.RedirectTo("Account/Lockout");
+            var result = await SignInManager.PasswordSignInAsync(Input.Email, Input.Password, Input.RememberMe, lockoutOnFailure: false);
+
+            if (result.Succeeded)
+            {
+                Logger.LogInformation("User logged in.");
+                RedirectManager.RedirectTo("/"); // ReturnUrl
+            }
+            else if (result.RequiresTwoFactor)
+            {
+                RedirectManager.RedirectTo("Account/LoginWith2fa", new() { ["returnUrl"] = ReturnUrl, ["rememberMe"] = Input.RememberMe });
+            }
+            else if (result.IsLockedOut)
+            {
+                Logger.LogWarning("User account locked out.");
+                RedirectManager.RedirectTo("Account/Lockout");
+            }
+            else
+            {
+                errorMessage = "Invalid login attempt.";
+            }
         }
         else
         {
-            errorMessage = "Error: Invalid login attempt.";
+            errorMessage = "Invalid login attempt.";
         }
     }
 
@@ -129,3 +153,25 @@
         public bool RememberMe { get; set; }
     }
 }
+<style>
+    .alert-overlay {
+        position: fixed;
+        top: 0;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 90%;
+        max-width: 500px;
+        z-index: 1050; /* Ensures it stays above other elements */
+        margin: 0;
+        padding: 15px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+        .alert-overlay .close-btn {
+            position: absolute;
+            top: 5px;
+            right: 10px;
+            cursor: pointer;
+        }
+
+</style>

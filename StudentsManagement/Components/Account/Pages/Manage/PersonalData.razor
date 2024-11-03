@@ -1,4 +1,4 @@
-﻿@page "/Account/Manage/PersonalData"
+﻿@* @page "/Account/Manage/PersonalData"
 
 @inject IdentityUserAccessor UserAccessor
 
@@ -32,3 +32,87 @@
         _ = await UserAccessor.GetRequiredUserAsync(HttpContext);
     }
 }
+ *@
+
+ @page "/Account/Manage/PersonalData"
+
+@inject IdentityUserAccessor UserAccessor
+
+<PageTitle>Personal Data</PageTitle>
+
+<h3 class="personal-data-header">Personal Data</h3>
+<StatusMessage />
+
+<div class="personal-data-container">
+    <p>Your account contains personal data that you have given us. This page allows you to download or delete that data.</p>
+    <p>
+        <strong>Deleting this data will permanently remove your account, and this cannot be recovered.</strong>
+    </p>
+
+    <form action="Account/Manage/DownloadPersonalData" method="post">
+        <AntiforgeryToken />
+        <button class="btn btn-primary w-100 mb-2" type="submit">Download</button>
+    </form>
+
+    <a href="Account/Manage/DeletePersonalData" class="btn btn-danger w-100">Delete</a>
+</div>
+
+@code {
+    [CascadingParameter]
+    private HttpContext HttpContext { get; set; } = default!;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _ = await UserAccessor.GetRequiredUserAsync(HttpContext);
+    }
+}
+
+<style>
+    .dark-mode .personal-data-container {
+        background-color: #3F474E;
+    }
+
+    .dark-mode .p {
+        color: white;
+    }
+
+    .personal-data-header {
+        text-align: center;
+        font-size: 1.5rem;
+        font-weight: bold;
+        margin-bottom: 20px;
+        color: #0DAFB2;
+    }
+
+    .personal-data-container {
+        background-color: #ffffff;
+        padding: 30px;
+        border-radius: 8px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        max-width: 500px;
+        margin: 0 auto;
+        text-align: center;
+    }
+
+    .btn-primary {
+        background-color: #007bff;
+        border: none;
+        transition: background-color 0.3s ease;
+    }
+
+    .btn-primary:hover {
+        background-color: #0056b3;
+    }
+
+    .btn-danger {
+        margin-top: 10px;
+    }
+
+    .w-100 {
+        width: 100%;
+    }
+
+    .mb-2 {
+        margin-bottom: 10px;
+    }
+</style>

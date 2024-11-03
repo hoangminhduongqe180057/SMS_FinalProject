@@ -1,17 +1,52 @@
 ﻿@inherits LayoutComponentBase
 @layout AccountLayout
 
-<h1>Manage your account</h1>
-
-<div>
-    <h2>Change your account settings</h2>
-    <hr />
-    <div class="row">
-        <div class="col-md-3">
+<div class="account-manage-container">
+    <h3 class="account-title">Manage your account</h3> <!-- Title outside the row -->
+    <div class="row content-row">
+        <!-- Added class for row styling -->
+        <div class="col-md-5 menu-con">
             <ManageNavMenu />
         </div>
-        <div class="col-md-9">
+        <div class="col-md-7">
             @Body
         </div>
     </div>
 </div>
+
+<style>
+    .account-title {
+        text-align: center; /* Center the title horizontally */
+        font-size: 1.75rem;
+        font-weight: bold;
+        color: red;
+        margin-bottom: 20px;
+        width: 100%; /* Make title span the full width */
+    }
+
+    .dark-mode .account-manage-container{
+        background-color: #444444;
+    }
+    .account-manage-container {
+        display: flex;
+        flex-direction: column; /* Arrange title and row in a column */
+        justify-content: center;
+        align-items: center;
+        min-height: 80vh; /* Adjust the height as needed */
+        padding: 20px;
+        padding-top: 10px;
+        background-color: #DFEFF2;
+        border-radius: 15px; /* Rounded corners */
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Shadow effect */
+    }
+
+    .content-row {
+        width: 100%; /* Ensure row takes full container width */
+        display: flex;
+        justify-content: center;
+    }
+
+    .menu-con {
+        padding-top: 35px;
+    }
+</style>

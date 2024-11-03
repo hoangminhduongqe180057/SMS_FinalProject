@@ -1,0 +1,175 @@
+﻿@page "/complaint/edit/{id:int}"
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
+@using StudentsManagement.Shared.Models
+@inject NavigationManager navigation;
+@inject IJSRuntime JsRuntime
+@using System.Security.Claims
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@inject HttpClient Http;
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Update Complaint Details</h3>
+            </div>
+            <div class="card-body">
+                <EditForm Model="complaintobj" OnValidSubmit="UpdateComplaint" FormName="updateComplaint" OnInvalidSubmit="HandleInvalidSubmit">
+                    <DataAnnotationsValidator />
+                    <ValidationSummary />
+                    <div class="col-md-12">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="control-label">Complaint Type</label>
+                                    <InputSelect for="ComplaintTypeId" class="form-control" @bind-Value="@complaintobj.ComplaintTypeId">
+                                        <option value="">Select Complaint Type</option>
+                                        @if (ComplaintTypes != null && ComplaintTypes.Any())
+                                        {
+                                            @foreach (var type in ComplaintTypes)
+                                            {
+                                                <option value="@type.Id">@type.Description</option>
+                                            }
+                                        }
+                                    </InputSelect>
+                                    <ValidationMessage For="()=>complaintobj.ComplaintTypeId" />
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="control-label">Complaint Source</label>
+                                    <InputSelect for="ComplaintTypeId" class="form-control" @bind-Value="@complaintobj.SourceId">
+                                        <option value="">Select Complaint Source</option>
+                                        @if (ComplaintSource != null && ComplaintSource.Any())
+                                        {
+                                            @foreach (var source in ComplaintSource)
+                                            {
+                                                <option value="@source.Id">@source.Description</option>
+                                            }
+                                        }
+                                    </InputSelect>
+                                    <ValidationMessage For="()=>complaintobj.SourceId" />
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="control-label">Complainant</label>
+                                    <InputText for="ComplaintBy" class="form-control" @bind-Value="@complaintobj.ComplaintBy" />
+                                    <ValidationMessage For="()=>complaintobj.ComplaintBy" />
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="control-label">Phone Number</label>
+                                    <InputText for="PhoneNumber" class="form-control" @bind-Value="@complaintobj.PhoneNumber" />
+                                    <ValidationMessage For="()=>complaintobj.PhoneNumber" />
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="control-label">Complaint Date</label>
+                                    <InputDate for="ComplaintDate" class="form-control" @bind-Value="@complaintobj.ComplaintDate" />
+                                    <ValidationMessage For="()=>complaintobj.ComplaintDate" />
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="control-label">Complaint Note</label>
+                                    <InputText for="Description" class="form-control" @bind-Value="@complaintobj.Description" />
+                                    <ValidationMessage For="()=>complaintobj.Description" />
+                                </div>
+                            </div>
+
+                        </div>
+                        <div class="form-group mt-4">
+                            <button type="submit" class="btn btn-primary">Save Complaint</button>
+                            <button type="button" @onclick="()=>Cancel()" class="btn btn-danger">Back to List</button>
+                        </div>
+                    </div>
+                </EditForm>
+            </div>
+        </div>
+    </div>
+</div>
+@code {
+
+    [SupplyParameterFromForm]
+    public Complaint complaintobj { get; set; } = new();
+    List<SystemCodeDetail> ComplaintTypes = new List<SystemCodeDetail>();
+    List<SystemCodeDetail> ComplaintSource = new List<SystemCodeDetail>();
+    private string serverErrorMessage;
+
+    public ApplicationUserDto user { get; set; } = new ApplicationUserDto();
+    public string CurrentUserId { get; set; }
+
+    [Parameter]
+    public int id { get; set; }
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        ComplaintTypes = await SystemCodeDetailService.GetByCodeAsync("ComplaintType");
+        ComplaintSource = await SystemCodeDetailService.GetByCodeAsync("ComplaintSource");
+        var pendingStatus = await SystemCodeDetailService.GetByStatusCodeAsync("ComplaintStatus", "Pending");
+        complaintobj.StatusId = pendingStatus.Id;
+
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var userClaims = authState.User;
+
+        if (userClaims.Identity.IsAuthenticated)
+        {
+            CurrentUserId = userClaims.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            if (!string.IsNullOrEmpty(CurrentUserId))
+            {
+                user = await Http.GetFromJsonAsync<ApplicationUserDto>($"api/User/{CurrentUserId}");
+            }
+            else
+            {
+                Console.WriteLine("User ID is null or empty.");
+            }
+        }
+        else
+        {
+            Console.WriteLine("User is not authenticated.");
+        }
+        await LoadComplaint();
+    }
+    public async Task LoadComplaint()
+    {
+        complaintobj = await ComplaintService.GetByIdAsync(id);
+    }
+
+
+    protected async Task UpdateComplaint()
+    {
+        try
+        {
+            var result = ComplaintService.UpdateAsync(complaintobj);
+            navigation.NavigateTo("/complaints-list", forceLoad: true);
+        }
+        catch (Exception ex)
+        {
+            // Log hoặc hiển thị lỗi
+            await JsRuntime.InvokeVoidAsync("alert", "Error while saving the complaint: " + ex.Message);
+        }
+    }
+    public void Cancel()
+    {
+        navigation.NavigateTo("/complaints-list", forceLoad: true);
+    }
+
+    public class ApplicationUserDto
+    {
+        public string Id { get; set; }
+        public string UserName { get; set; }
+        public string Email { get; set; }
+    }
+    private void HandleInvalidSubmit(EditContext editContext)
+    {
+        serverErrorMessage = "Please fill in all required fields.";
+    }
+}

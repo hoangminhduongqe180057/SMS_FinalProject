@@ -1,0 +1,77 @@
+﻿@page "/teacher/detail/{id:int}"
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
+@using StudentsManagement.Shared.Models
+@inject NavigationManager navigation;
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+
+<h3>View Teacher Detail</h3>
+
+<hr />
+<div class="row">
+    <div class="col-md-12">
+        <table class="table">
+            <tr>
+                <th>Full Name</th>
+                <td>@teacherobj.FullName</td>
+            </tr>
+            <tr>
+                <th>Gender</th>
+                <td>@teacherobj.Gender?.Description</td>
+            </tr>
+            <tr>
+                <th>Date of birth</th>
+                <td>@teacherobj.DOB.ToShortDateString()</td>
+            </tr>
+            <tr>
+                <th>Email Address</th>
+                <td>@teacherobj.EmailAddress</td>
+            </tr>
+            <tr>
+                <th>Address</th>
+                <td>@teacherobj.Address</td>
+            </tr>
+            <tr>
+                <th>Phone Number</th>
+                <td>@teacherobj.PhoneNumber</td>
+            </tr>
+            <tr>
+                <th>Marital Status</th>
+                <td>@teacherobj.MaritalStatus?.Description</td>
+            </tr>
+        </table>
+    </div>
+    <div class="form-group">
+        <a class="btn btn-primary" href="/teacher/edit/@teacherobj.Id"> Update Teacher </a>
+        <button type="button" @onclick="()=>Cancel()" class="btn btn-danger">Back to list</button>
+    </div>
+</div>
+
+@code {
+    [SupplyParameterFromForm]
+    public Teacher teacherobj { get; set; } = new();
+
+    [Parameter]
+    public int id { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadTeacher();
+    }
+
+    private async Task LoadTeacher()
+    {
+        teacherobj = await TeacherService.GetByIdAsync(id);
+    }
+
+    protected async Task Delete()
+    {
+        var result = await TeacherService.DeleteAsync(id);
+        navigation.NavigateTo("/teachers-list", forceLoad: true);
+    }
+
+    public void Cancel()
+    {
+        navigation.NavigateTo("/teachers-list", forceLoad: true);
+    }
+}

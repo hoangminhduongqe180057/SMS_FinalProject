@@ -1,8 +1,10 @@
 ﻿@page "/add-academicYear"
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
 @using StudentsManagement.Shared.Models
 @inject NavigationManager navigation;
 @inject IJSRuntime JSRuntime
-@rendermode InteractiveServer
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
 
 <div class="row">
     <div class="col-12">
@@ -11,7 +13,7 @@
                 <h3 class="card-title">Add New Academic Year</h3>
             </div>
             <div class="card-body">
-                <EditForm Model="academicobj" OnValidSubmit="CreateAcademicYear" FormName="addAcademicYear">
+                <EditForm Model="academicobj" OnValidSubmit="CreateAcademicYear" FormName="addAcademicYear" OnInvalidSubmit="HandleInvalidSubmit">
                     <DataAnnotationsValidator />
                     <ValidationSummary />
                     <div class="col-md-12">
@@ -60,6 +62,7 @@
     [SupplyParameterFromForm]
     public AcademicYears academicobj { get; set; } = new();
     List<SystemCodeDetail> BookCategory = new List<SystemCodeDetail>();
+    private string serverErrorMessage;
 
     [CascadingParameter]
     private Task<AuthenticationState> authenticationStateTask { get; set; }
@@ -74,7 +77,7 @@
         try
         {
             var result = AcademicYearService.AddAsync(academicobj);
-            navigation.NavigateTo("/academicYears-list");
+            navigation.NavigateTo("/academicYears-list", forceLoad: true);
         }
         catch (Exception ex)
         {
@@ -83,6 +86,10 @@
     }
     public void Cancel()
     {
-        navigation.NavigateTo("/academicYears-list");
+        navigation.NavigateTo("/academicYears-list", forceLoad: true);
+    }
+    private void HandleInvalidSubmit(EditContext editContext)
+    {
+        serverErrorMessage = "Please fill in all required fields.";
     }
 }
