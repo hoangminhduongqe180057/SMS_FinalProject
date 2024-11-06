@@ -36,7 +36,7 @@
                         <h3 class="mb-4 text-center">Have an account?</h3>
                         <div class="form-group">
                             <label for="email" class="form-label">Email</label>
-                            <InputText @bind-Value="Input.Email" class="form-control" autocomplete="username" aria-required="true" placeholder="name@gmail.com" />
+                            <InputText @bind-Value="Input.Email" class="form-control" autocomplete="username" aria-required="true" placeholder="name@domain.com" />
                             <ValidationMessage For="() => Input.Email" class="text-danger" />
                         </div>
                         <div class="form-group">
@@ -112,6 +112,12 @@
                 RedirectManager.RedirectTo("Account/Lockout");
             }
 
+            if (!user.EmailConfirmed)
+            {
+                errorMessage = "Your email is not confirmed. Please confirm your email to continue.";
+                return;
+            }
+
             var result = await SignInManager.PasswordSignInAsync(Input.Email, Input.Password, Input.RememberMe, lockoutOnFailure: false);
 
             if (result.Succeeded)
@@ -133,10 +139,10 @@
                 errorMessage = "Invalid login attempt.";
             }
         }
-        else
-        {
-            errorMessage = "Invalid login attempt.";
-        }
+        // else
+        // {
+        //     errorMessage = "Invalid login attempt.";
+        // }
     }
 
     private sealed class InputModel

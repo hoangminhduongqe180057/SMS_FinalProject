@@ -1,0 +1,36 @@
+﻿@inject NavigationManager Navigation
+
+@if (IsVisible)
+{
+    <div class="modal-overlay">
+        <div class="modal-content">
+            <p>@Message</p>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public string Message { get; set; } = "Please check your email and log in again.";
+
+    public bool IsVisible { get; private set; }
+
+    private int delayBeforeRedirect = 3000; // Delay time in milliseconds
+
+    public void Show()
+    {
+        IsVisible = true;
+        StateHasChanged();
+        StartRedirectCountdown(); // Bắt đầu quá trình đếm ngược để chuyển trang
+    }
+
+    private async Task StartRedirectCountdown()
+    {
+        // Đợi một khoảng thời gian trước khi chuyển trang
+        await Task.Delay(delayBeforeRedirect);
+
+        // Chuyển hướng đến trang đăng nhập
+        // Đảm bảo điều hướng trong ngữ cảnh Blazor hợp lệ
+        await InvokeAsync(() => Navigation.NavigateTo("/Account/Login"));
+    }
+}

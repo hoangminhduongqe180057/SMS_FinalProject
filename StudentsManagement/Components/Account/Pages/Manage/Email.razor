@@ -1,4 +1,4 @@
-﻿@page "/Account/Manage/Email"
+﻿@* @page "/Account/Manage/Email"
 
 @using System.ComponentModel.DataAnnotations
 @using System.Text
@@ -9,12 +9,14 @@
 @using Microsoft.CodeAnalysis.Elfie.Diagnostics
 @using Microsoft.Extensions.Logging
 @using StudentsManagement.Data
+@inject IJSRuntime JS
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
 
 @inject UserManager<ApplicationUser> UserManager
 @inject IEmailSender EmailSender
 @inject IdentityUserAccessor UserAccessor
 @inject NavigationManager NavigationManager
-
+@implements IDisposable
 <PageTitle>Manage Email</PageTitle>
 
 <h3 class="email-header">Manage Email</h3>
@@ -31,11 +33,11 @@
 
         @if (isEmailConfirmed)
         {
-            <div class="form-floating mb-3 input-group">
+            <div class="form-floating mb-3">
                 <label for="email" class="form-label">Email</label>
                 <input type="text" value="@email" class="form-control" placeholder="Please enter your email." disabled />
                 <div class="input-group-append">
-                    <span class="h-100 input-group-text text-success font-weight-bold">✓</span>
+                    <span class="h-80 input-group-text text-success font-weight-bold">✓</span>
                 </div>
             </div>
         }
@@ -63,12 +65,33 @@
     private ApplicationUser user = default!;
     private string? email;
     private bool isEmailConfirmed;
+    private Timer? _timer;
 
     [CascadingParameter]
     private HttpContext HttpContext { get; set; } = default!;
 
     [SupplyParameterFromForm]
     private InputModel Input { get; set; } = new();
+
+    public void Dispose()
+    {
+        // Giải phóng tài nguyên Timer nếu nó được tạo
+        _timer?.Dispose();
+    }
+
+    private async Task CheckEmailConfirmationAsync()
+    {
+        // Kiểm tra trạng thái email
+        isEmailConfirmed = await UserManager.IsEmailConfirmedAsync(user);
+
+        if (isEmailConfirmed)
+        {
+            message = "Your email has been confirmed. Please log in again.";
+            _timer?.Change(Timeout.Infinite, 0); // Ngưng Timer sau khi xác nhận email
+            await InvokeAsync(StateHasChanged);  // Cập nhật giao diện
+        }
+    }
+
 
     protected override async Task OnInitializedAsync()
     {
@@ -77,6 +100,9 @@
         isEmailConfirmed = await UserManager.IsEmailConfirmedAsync(user);
 
         Input.NewEmail ??= email;
+
+        // Thiết lập Timer để kiểm tra trạng thái email mỗi phút
+        _timer = new Timer(async _ => await CheckEmailConfirmationAsync(), null, TimeSpan.FromMinutes(1), TimeSpan.FromMinutes(1));
     }
 
     private async Task OnValidSubmitAsync()
@@ -84,6 +110,12 @@
         if (Input.NewEmail is null || Input.NewEmail == email)
         {
             message = "Your email is unchanged.";
+            return;
+        }
+
+        if (await IsEmailInUseAsync(Input.NewEmail))
+        {
+            message = "This email is already in use by another account.";
             return;
         }
 
@@ -97,6 +129,18 @@
         await SendConfirmationLinkAsync(Input.NewEmail, HtmlEncoder.Default.Encode(callbackUrl));
 
         message = "Confirmation link to change email sent. Please check your email.";
+
+        bool confirmed = await JS.InvokeAsync<bool>("confirm", "Please confirm your email and then log in again. Press OK to go to the login page.");
+        if (confirmed)
+        {
+            NavigationManager.NavigateTo("Account/Login");
+        }
+    }
+
+    private async Task<bool> IsEmailInUseAsync(string newEmail)
+    {
+        var existingUser = await UserManager.FindByEmailAsync(newEmail);
+        return existingUser != null;
     }
 
     private async Task OnSendEmailVerificationAsync()
@@ -110,7 +154,7 @@
         var code = await UserManager.GenerateEmailConfirmationTokenAsync(user);
         code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
         var callbackUrl = NavigationManager.GetUriWithQueryParameters(
-            NavigationManager.ToAbsoluteUri("Account/ConfirmEmail").AbsoluteUri,
+            NavigationManager.ToAbsoluteUri("Account/ConfirmEmailChange").AbsoluteUri,
             new Dictionary<string, object?> { ["userId"] = userId, ["code"] = code });
 
         await SendConfirmationLinkAsync(email, HtmlEncoder.Default.Encode(callbackUrl));
@@ -135,6 +179,211 @@
         }
     }
 
+    private sealed class InputModel
+    {
+        [Required]
+        [EmailAddress]
+        [Display(Name = "New email")]
+        public string? NewEmail { get; set; }
+    }
+} *@
+
+@page "/Account/Manage/Email"
+@using System.ComponentModel.DataAnnotations
+@using System.Text
+@using System.Text.Encodings.Web
+@using Microsoft.AspNetCore.Identity
+@using Microsoft.AspNetCore.Identity.UI.Services
+@using Microsoft.AspNetCore.WebUtilities
+@using Microsoft.Extensions.Logging
+@using StudentsManagement.Data
+
+@inject UserManager<ApplicationUser> UserManager
+@inject IEmailSender EmailSender
+@inject IdentityUserAccessor UserAccessor
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JS
+@implements IDisposable
+
+
+<PageTitle>Manage Email</PageTitle>
+
+<h3 class="email-header">Manage Email</h3>
+<StatusMessage Message="@message" />
+<div class="email-container">
+    <form id="send-verification-form" method="post">
+        <AntiforgeryToken />
+        <button type="button" class="btn btn-link" @onclick="OnSendEmailVerificationAsync">Send verification email</button>
+    </form>
+
+    <EditForm Model="Input" OnValidSubmit="OnValidSubmitAsync" FormName="change-email">
+        <DataAnnotationsValidator />
+        <ValidationSummary class="text-danger" role="alert" />
+
+        @if (isEmailConfirmed)
+        {
+            <div class="form-floating mb-3">
+                <label for="email" class="form-label">Email</label>
+                <input type="text" value="@email" class="form-control" placeholder="Please enter your email." disabled />
+                <div class="input-group-append">
+                    <span class="h-80 input-group-text text-success font-weight-bold">✓</span>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="form-floating mb-3">
+                <label for="email" class="form-label">Email</label>
+                <input type="text" value="@email" class="form-control" placeholder="Please enter your email." disabled />
+            </div>
+        }
+
+        <div class="form-floating mb-3">
+            <label for="new-email" class="form-label">New email</label>
+            <InputText @bind-Value="Input.NewEmail" class="form-control" autocomplete="email" aria-required="true" placeholder="Please enter new email." />
+            <ValidationMessage For="() => Input.NewEmail" class="text-danger" />
+        </div>
+
+        <button type="submit" class="w-100 btn btn-primary">Change Email</button>
+    </EditForm>
+</div>
+
+@* @if (!string.IsNullOrEmpty(message))
+{
+    <p class="alert alert-info">@message</p>
+} *@
+
+@code {
+    private string? message;
+    private ApplicationUser user = default!;
+    private string? email;
+    private bool isEmailConfirmed;
+    private bool redirectToLogin = false;
+    private Timer? _timer;
+    private Dialog dialog;
+
+    [CascadingParameter]
+    private HttpContext HttpContext { get; set; } = default!;
+
+    [SupplyParameterFromForm]
+    private InputModel Input { get; set; } = new();
+
+    public void Dispose()
+    {
+        _timer?.Dispose();
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        user = await UserAccessor.GetRequiredUserAsync(HttpContext);
+        email = await UserManager.GetEmailAsync(user);
+        isEmailConfirmed = await UserManager.IsEmailConfirmedAsync(user);
+
+        Input.NewEmail ??= email;
+
+        // Thiết lập Timer để kiểm tra trạng thái email mỗi phút
+        _timer = new Timer(async _ => await CheckEmailConfirmationAsync(), null, TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(5));
+    }
+
+    // protected override async Task OnAfterRenderAsync(bool firstRender)
+    // {
+    //     if (redirectToLogin)
+    //     {
+    //         // Gọi JavaScript confirm() để yêu cầu người dùng xác nhận điều hướng
+    //         Console.WriteLine("Attempting to show JavaScript confirm dialog for login redirect.");
+    //         bool confirmed = await JS.InvokeAsync<bool>("confirm", "Please confirm your email and then log in again. Press OK to go to the login page.");
+    //         if (confirmed)
+    //         {
+    //             Console.WriteLine("User confirmed, navigating to login page.");
+    //             NavigationManager.NavigateTo("Account/Login");
+    //         }
+    //         redirectToLogin = false; // Reset cờ sau khi điều hướng
+    //     }
+    // }
+    private async Task OnValidSubmitAsync()
+    {
+        if (Input.NewEmail is null || Input.NewEmail == email)
+        {
+            message = "Your email is unchanged.";
+            return;
+        }
+
+        if (await IsEmailInUseAsync(Input.NewEmail))
+        {
+            message = "This email is already in use by another account.";
+            return;
+        }
+
+        var userId = await UserManager.GetUserIdAsync(user);
+        var code = await UserManager.GenerateChangeEmailTokenAsync(user, Input.NewEmail);
+        code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
+        var callbackUrl = NavigationManager.GetUriWithQueryParameters(
+            NavigationManager.ToAbsoluteUri("Account/ConfirmEmailChange").AbsoluteUri,
+            new Dictionary<string, object?> { ["userId"] = userId, ["email"] = Input.NewEmail, ["code"] = code });
+
+        await SendConfirmationLinkAsync(Input.NewEmail, HtmlEncoder.Default.Encode(callbackUrl));
+
+        message = "Confirmation link to change email sent. Please check your email.";
+        StateHasChanged();  // Cập nhật giao diện để hiển thị thông báo
+        NavigationManager.NavigateTo("/Account/Login");
+        
+    }
+
+   
+
+    private async Task OnSendEmailVerificationAsync()
+    {
+        if (email is null)
+        {
+            return;
+        }
+
+        var userId = await UserManager.GetUserIdAsync(user);
+        var code = await UserManager.GenerateEmailConfirmationTokenAsync(user);
+        code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
+        var callbackUrl = NavigationManager.GetUriWithQueryParameters(
+            NavigationManager.ToAbsoluteUri("Account/ConfirmEmailChange").AbsoluteUri,
+            new Dictionary<string, object?> { ["userId"] = userId, ["code"] = code });
+
+        await SendConfirmationLinkAsync(email, HtmlEncoder.Default.Encode(callbackUrl));
+
+        message = "Verification email sent. Please check your email.";
+    }
+
+    private async Task<bool> IsEmailInUseAsync(string newEmail)
+    {
+        var existingUser = await UserManager.FindByEmailAsync(newEmail);
+        return existingUser != null;
+    }
+
+    private async Task SendConfirmationLinkAsync(string email, string callbackUrl)
+    {
+        var subject = "Confirm your email";
+        var message = $"Please confirm your account by <a href='{callbackUrl}'>clicking here</a>.";
+
+        try
+        {
+            await EmailSender.SendEmailAsync(email, subject, message);
+            Console.WriteLine($"Confirmation email sent to {email} with callback URL: {callbackUrl}");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Failed to send confirmation email to {email}: {ex.Message}");
+        }
+    }
+
+    private async Task CheckEmailConfirmationAsync()
+    {
+        isEmailConfirmed = await UserManager.IsEmailConfirmedAsync(user);
+
+        if (isEmailConfirmed)
+        {
+            message = "Your email has been confirmed. Please log in again.";
+            await InvokeAsync(StateHasChanged);
+            Console.WriteLine("Email confirmed. Timer stopped, message updated.");
+            _timer?.Change(Timeout.Infinite, 0);
+        }
+    }
 
     private sealed class InputModel
     {
@@ -144,6 +393,7 @@
         public string? NewEmail { get; set; }
     }
 }
+
 
 <style>
 
@@ -159,6 +409,257 @@
         background-color: white;
         color: black;
     }
+
+    .email-header {
+        text-align: center;
+        font-size: 1.5rem;
+        font-weight: bold;
+        margin-bottom: 20px;
+        color: #0DAFB2;
+    }
+
+    .email-container {
+        background-color: #ffffff;
+        padding: 30px;
+        border-radius: 8px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        max-width: 500px;
+        margin: 0 auto;
+    }
+
+    .form-label {
+        font-size: 1rem;
+        font-weight: 500;
+    }
+
+    .btn-primary {
+        background-color: #007bff;
+        border: none;
+        transition: background-color 0.3s ease;
+    }
+
+        .btn-primary:hover {
+            background-color: #0056b3;
+        }
+
+    .input-group-append .input-group-text {
+        background-color: transparent;
+        border: none;
+        color: #28a745;
+        font-weight: bold;
+    }
+</style>  
+
+
+
+
+
+
+@* @page "/Account/Manage/Email"
+@implements IDisposable
+@using System.ComponentModel.DataAnnotations
+@using System.Text
+@using System.Text.Encodings.Web
+@using Microsoft.AspNetCore.Identity
+@using Microsoft.AspNetCore.Identity.UI.Services
+@using Microsoft.AspNetCore.WebUtilities
+@using Microsoft.Extensions.Logging
+@using StudentsManagement.Data
+
+@inject UserManager<ApplicationUser> UserManager
+@inject IEmailSender EmailSender
+@inject IdentityUserAccessor UserAccessor
+@inject NavigationManager NavigationManager
+<PageTitle>Manage Email</PageTitle>
+
+<h3 class="email-header">Manage Email</h3>
+<StatusMessage Message="@message" />
+
+<div class="email-container">
+    <form @onsubmit="OnSendEmailVerificationAsync" @formname="send-verification" id="send-verification-form" method="post">
+        <AntiforgeryToken />
+    </form>
+
+    <EditForm Model="Input" OnValidSubmit="OnValidSubmitAsync" FormName="change-email">
+        <DataAnnotationsValidator />
+        <ValidationSummary class="text-danger" role="alert" />
+
+        @if (isEmailConfirmed)
+        {
+            <div class="form-floating mb-3">
+                <label for="email" class="form-label">Email</label>
+                <input type="text" value="@email" class="form-control" placeholder="Please enter your email." disabled />
+                <div class="input-group-append">
+                    <span class="h-80 input-group-text text-success font-weight-bold">✓</span>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="form-floating mb-3">
+                <label for="email" class="form-label">Email</label>
+                <input type="text" value="@email" class="form-control" placeholder="Please enter your email." disabled />
+                <button type="submit" class="btn btn-link" form="send-verification-form">Send verification email</button>
+            </div>
+        }
+
+        <div class="form-floating mb-3">
+            <label for="new-email" class="form-label">New email</label>
+            <InputText @bind-Value="Input.NewEmail" class="form-control" autocomplete="email" aria-required="true" placeholder="Please enter new email." />
+            <ValidationMessage For="() => Input.NewEmail" class="text-danger" />
+        </div>
+
+        <button type="submit" class="w-100 btn btn-primary">Change Email</button>
+    </EditForm>
+</div>
+
+@code {
+    private string? message;
+    private ApplicationUser user = default!;
+    private string? email;
+    private bool isEmailConfirmed;
+    private PeriodicTimer? _periodicTimer;
+    private CancellationTokenSource _cancellationTokenSource = new();
+
+    [CascadingParameter]
+    private HttpContext HttpContext { get; set; } = default!;
+
+    [SupplyParameterFromForm]
+    private InputModel Input { get; set; } = new();
+
+    public void Dispose()
+    {
+        if (_periodicTimer is not null)
+        {
+            _cancellationTokenSource.Cancel();
+            _periodicTimer.Dispose();
+        }
+        _cancellationTokenSource.Dispose();
+    }
+
+    private async Task CheckEmailConfirmationAsync()
+    {
+        isEmailConfirmed = await UserManager.IsEmailConfirmedAsync(user);
+
+        if (isEmailConfirmed)
+        {
+            message = "Your email has been confirmed. Please log in again.";
+            await InvokeAsync(StateHasChanged);
+            _cancellationTokenSource.Cancel(); // Stop the periodic timer after confirmation
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        user = await UserAccessor.GetRequiredUserAsync(HttpContext);
+        email = await UserManager.GetEmailAsync(user);
+        isEmailConfirmed = await UserManager.IsEmailConfirmedAsync(user);
+
+        Input.NewEmail ??= email;
+
+        // Set up PeriodicTimer to check email confirmation status every minute
+        _periodicTimer = new PeriodicTimer(TimeSpan.FromSeconds(20));
+
+        // Run PeriodicTimer in background
+        _ = Task.Run(async () =>
+        {
+            while (await _periodicTimer.WaitForNextTickAsync(_cancellationTokenSource.Token))
+            {
+                await CheckEmailConfirmationAsync();
+            }
+        });
+    }
+
+    private async Task OnValidSubmitAsync()
+    {
+        if (Input.NewEmail is null || Input.NewEmail == email)
+        {
+            message = "Your email is unchanged.";
+            return;
+        }
+
+        if (await IsEmailInUseAsync(Input.NewEmail))
+        {
+            message = "This email is already in use by another account.";
+            return;
+        }
+
+        var userId = await UserManager.GetUserIdAsync(user);
+        var code = await UserManager.GenerateChangeEmailTokenAsync(user, Input.NewEmail);
+        code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
+        var callbackUrl = NavigationManager.GetUriWithQueryParameters(
+            NavigationManager.ToAbsoluteUri("Account/ConfirmEmailChange").AbsoluteUri,
+            new Dictionary<string, object?> { ["userId"] = userId, ["email"] = Input.NewEmail, ["code"] = code });
+
+        await SendConfirmationLinkAsync(Input.NewEmail, HtmlEncoder.Default.Encode(callbackUrl));
+
+        message = "Confirmation link to change email sent. Please check your email.";
+    }
+
+    private async Task<bool> IsEmailInUseAsync(string newEmail)
+    {
+        var existingUser = await UserManager.FindByEmailAsync(newEmail);
+        return existingUser != null;
+    }
+
+    private async Task OnSendEmailVerificationAsync()
+    {
+        if (email is null)
+        {
+            return;
+        }
+
+        var userId = await UserManager.GetUserIdAsync(user);
+        var code = await UserManager.GenerateEmailConfirmationTokenAsync(user);
+        code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
+        var callbackUrl = NavigationManager.GetUriWithQueryParameters(
+            NavigationManager.ToAbsoluteUri("Account/ConfirmEmailChange").AbsoluteUri,
+            new Dictionary<string, object?> { ["userId"] = userId, ["code"] = code });
+
+        await SendConfirmationLinkAsync(email, HtmlEncoder.Default.Encode(callbackUrl));
+
+        message = "Verification email sent. Please check your email.";
+    }
+
+    private async Task SendConfirmationLinkAsync(string email, string callbackUrl)
+    {
+        var subject = "Confirm your email";
+        var message = $"Please confirm your account by <a href='{callbackUrl}'>clicking here</a>.";
+
+        try
+        {
+            await EmailSender.SendEmailAsync(email, subject, message);
+            Console.WriteLine($"Confirmation email sent to {email} with callback URL: {callbackUrl}");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Failed to send confirmation email to {email}: {ex.Message}");
+        }
+    }
+
+    private sealed class InputModel
+    {
+        [Required]
+        [EmailAddress]
+        [Display(Name = "New email")]
+        public string? NewEmail { get; set; }
+    }
+}
+
+<style>
+    .dark-mode .email-container {
+        background-color: #3F474E;
+    }
+
+    .dark-mode .form-label {
+        color: white;
+    }
+
+    .dark-mode .form-control {
+        background-color: white;
+        color: black;
+    }
+
     .email-header {
         text-align: center;
         font-size: 1.5rem;
@@ -198,3 +699,245 @@
         font-weight: bold;
     }
 </style>
+ *@
+
+
+
+@*  @page "/Account/Manage/Email"
+@implements IDisposable
+@using System.ComponentModel.DataAnnotations
+@using System.Text
+@using System.Text.Encodings.Web
+@using Microsoft.AspNetCore.Identity
+@using Microsoft.AspNetCore.Identity.UI.Services
+@using Microsoft.AspNetCore.WebUtilities
+@using Microsoft.Extensions.Logging
+@using StudentsManagement.Data
+
+@inject UserManager<ApplicationUser> UserManager
+@inject IEmailSender EmailSender
+@inject IdentityUserAccessor UserAccessor
+@inject NavigationManager NavigationManager
+
+<PageTitle>Manage Email</PageTitle>
+
+<h3 class="email-header">Manage Email</h3>
+<StatusMessage Message="@message" />
+
+<div class="email-container">
+    <form @onsubmit="OnSendEmailVerificationAsync" @formname="send-verification" id="send-verification-form" method="post">
+        <AntiforgeryToken />
+    </form>
+
+    <EditForm Model="Input" OnValidSubmit="OnValidSubmitAsync" FormName="change-email">
+        <DataAnnotationsValidator />
+        <ValidationSummary class="text-danger" role="alert" />
+
+        @if (isEmailConfirmed)
+        {
+            <div class="form-floating mb-3">
+                <label for="email" class="form-label">Email</label>
+                <input type="text" value="@email" class="form-control" placeholder="Please enter your email." disabled />
+                <div class="input-group-append">
+                    <span class="h-80 input-group-text text-success font-weight-bold">✓</span>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="form-floating mb-3">
+                <label for="email" class="form-label">Email</label>
+                <input type="text" value="@email" class="form-control" placeholder="Please enter your email." disabled />
+                <button type="submit" class="btn btn-link" form="send-verification-form">Send verification email</button>
+            </div>
+        }
+
+        <div class="form-floating mb-3">
+            <label for="new-email" class="form-label">New email</label>
+            <InputText @bind-Value="Input.NewEmail" class="form-control" autocomplete="email" aria-required="true" placeholder="Please enter new email." />
+            <ValidationMessage For="() => Input.NewEmail" class="text-danger" />
+        </div>
+
+        <button type="submit" class="w-100 btn btn-primary">Change Email</button>
+    </EditForm>
+
+    @if (!string.IsNullOrEmpty(message))
+    {
+        <p class="alert alert-info">@message</p>
+    }
+</div>
+
+@code {
+    private string? message;
+    private ApplicationUser user = default!;
+    private string? email;
+    private bool isEmailConfirmed;
+    private Timer? _timer;
+
+    [CascadingParameter]
+    private HttpContext HttpContext { get; set; } = default!;
+
+    [SupplyParameterFromForm]
+    private InputModel Input { get; set; } = new();
+
+    public void Dispose()
+    {
+        _timer?.Dispose();
+    }
+
+    private async Task CheckEmailConfirmationAsync()
+    {
+        Console.WriteLine("Checking email confirmation status...");
+
+        isEmailConfirmed = await UserManager.IsEmailConfirmedAsync(user);
+
+        if (isEmailConfirmed)
+        {
+            message = "Your email has been confirmed. Please log in again.";
+            Console.WriteLine("Email confirmed. Displaying login prompt.");
+            await InvokeAsync(StateHasChanged); // Cập nhật giao diện
+            _timer?.Change(Timeout.Infinite, 0); // Dừng Timer sau khi xác nhận email
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        user = await UserAccessor.GetRequiredUserAsync(HttpContext);
+        email = await UserManager.GetEmailAsync(user);
+        isEmailConfirmed = await UserManager.IsEmailConfirmedAsync(user);
+
+        Input.NewEmail ??= email;
+
+        // Thiết lập Timer để kiểm tra trạng thái xác nhận email mỗi 20 giây
+        _timer = new Timer(async _ => await CheckEmailConfirmationAsync(), null, TimeSpan.Zero, TimeSpan.FromSeconds(20));
+    }
+
+    private async Task OnValidSubmitAsync()
+    {
+        if (Input.NewEmail is null || Input.NewEmail == email)
+        {
+            message = "Your email is unchanged.";
+            return;
+        }
+
+        if (await IsEmailInUseAsync(Input.NewEmail))
+        {
+            message = "This email is already in use by another account.";
+            return;
+        }
+
+        var userId = await UserManager.GetUserIdAsync(user);
+        var code = await UserManager.GenerateChangeEmailTokenAsync(user, Input.NewEmail);
+        code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
+        var callbackUrl = NavigationManager.GetUriWithQueryParameters(
+            NavigationManager.ToAbsoluteUri("Account/ConfirmEmailChange").AbsoluteUri,
+            new Dictionary<string, object?> { ["userId"] = userId, ["email"] = Input.NewEmail, ["code"] = code });
+
+        await SendConfirmationLinkAsync(Input.NewEmail, HtmlEncoder.Default.Encode(callbackUrl));
+
+        message = "Confirmation link to change email sent. Please check your email.";
+    }
+
+    private async Task<bool> IsEmailInUseAsync(string newEmail)
+    {
+        var existingUser = await UserManager.FindByEmailAsync(newEmail);
+        return existingUser != null;
+    }
+
+    private async Task OnSendEmailVerificationAsync()
+    {
+        if (email is null)
+        {
+            return;
+        }
+
+        var userId = await UserManager.GetUserIdAsync(user);
+        var code = await UserManager.GenerateEmailConfirmationTokenAsync(user);
+        code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
+        var callbackUrl = NavigationManager.GetUriWithQueryParameters(
+            NavigationManager.ToAbsoluteUri("Account/ConfirmEmailChange").AbsoluteUri,
+            new Dictionary<string, object?> { ["userId"] = userId, ["code"] = code });
+
+        await SendConfirmationLinkAsync(email, HtmlEncoder.Default.Encode(callbackUrl));
+
+        message = "Verification email sent. Please check your email.";
+    }
+
+    private async Task SendConfirmationLinkAsync(string email, string callbackUrl)
+    {
+        var subject = "Confirm your email";
+        var message = $"Please confirm your account by <a href='{callbackUrl}'>clicking here</a>.";
+
+        try
+        {
+            await EmailSender.SendEmailAsync(email, subject, message);
+            Console.WriteLine($"Confirmation email sent to {email} with callback URL: {callbackUrl}");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Failed to send confirmation email to {email}: {ex.Message}");
+        }
+    }
+
+    private sealed class InputModel
+    {
+        [Required]
+        [EmailAddress]
+        [Display(Name = "New email")]
+        public string? NewEmail { get; set; }
+    }
+}
+
+<style>
+    .dark-mode .email-container {
+        background-color: #3F474E;
+    }
+
+    .dark-mode .form-label {
+        color: white;
+    }
+
+    .dark-mode .form-control {
+        background-color: white;
+        color: black;
+    }
+
+    .email-header {
+        text-align: center;
+        font-size: 1.5rem;
+        font-weight: bold;
+        margin-bottom: 20px;
+        color: #0DAFB2;
+    }
+
+    .email-container {
+        background-color: #ffffff;
+        padding: 30px;
+        border-radius: 8px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        max-width: 500px;
+        margin: 0 auto;
+    }
+
+    .form-label {
+        font-size: 1rem;
+        font-weight: 500;
+    }
+
+    .btn-primary {
+        background-color: #007bff;
+        border: none;
+        transition: background-color 0.3s ease;
+    }
+
+        .btn-primary:hover {
+            background-color: #0056b3;
+        }
+
+    .input-group-append .input-group-text {
+        background-color: transparent;
+        border: none;
+        color: #28a745;
+        font-weight: bold;
+    }
+</style> *@

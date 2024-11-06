@@ -76,7 +76,7 @@ namespace StudentsManagement.Services
             csvBuilder.AppendLine("Id No,Department Name,Department Code,Create By,Create On");
             foreach (var department in departments)
             {
-                csvBuilder.AppendLine($"{department.Id},{department.Name},{department.Code},{department.CreatedById},{department.CreatedOn}}");
+                csvBuilder.AppendLine($"{department.Id},{department.Name},{department.Code},{department.CreatedById},{department.CreatedOn}");
             }
             // Convert StringBuilder to byte array with UTF-8 encoding and BOM
             var preamble = Encoding.UTF8.GetPreamble();  // UTF-8 BOM

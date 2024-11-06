@@ -531,7 +531,7 @@
             }
 
             .dark-mode .direct-chat-messages{
-                background-color: #AEB4B4;
+                background-color: #454D55;
             }
 
         </style>
@@ -843,7 +843,15 @@
             window.URL.revokeObjectURL(url);
         };
     </script>
+    <script>
+        function confirmLogoutAndRedirect() {
+            if (confirm("Your email has been confirmed. You need to log in again. Press OK to proceed to the login page.")) {
+                window.location.href = "/Account/Login";
+            }
+        }
 
+
+    </script>
     
 </body>
 </html>

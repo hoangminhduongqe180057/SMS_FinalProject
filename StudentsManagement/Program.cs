@@ -54,7 +54,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
-builder.Services.AddIdentity<ApplicationUser, ApplicationRole>(options => options.SignIn.RequireConfirmedAccount = false)
+builder.Services.AddIdentity<ApplicationUser, ApplicationRole>(options => options.SignIn.RequireConfirmedAccount = true)
     .AddEntityFrameworkStores<ApplicationDbContext>()
     .AddSignInManager()
     .AddDefaultTokenProviders();
@@ -94,7 +94,7 @@ builder.Services.AddScoped<HostelRoomService>();
 builder.Services.AddScoped<AdminMessageService>();
 builder.Services.AddScoped<IdentityUserAccessor>();
 builder.Services.AddTransient<IEmailSender, AuthMessageSender>();
-
+builder.Services.AddHttpContextAccessor();
 
 builder.Services.AddTransient<IEmailSender, AuthMessageSender>(); // send Email
 

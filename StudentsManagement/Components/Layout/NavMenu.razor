@@ -12,10 +12,9 @@
         <span class="brand-text font-weight-light">Students</span>
     </a>
 
-    <!-- Sidebar -->
     <div class="sidebar">
-        <!-- Sidebar user panel -->
-        <div class="user-panel mt-3 pb-3 mb-3 d-flex">
+        @* <div class="user-panel mt-3 pb-3 mb-3 d-flex"> *@
+        <div class="user-panel mt-3 pb-3 mb-3 d-flex" style="display: @(isUserDataLoaded ? "flex" : "none")">
             <div class="image">
                 <img src="@photoUrl" class="img-circle elevation-2" alt="User Image">
             </div>
@@ -24,402 +23,434 @@
                     <Authorized>
                         <a href="/Account/Manage" class="d-block">@userName</a>
                     </Authorized>
+                    <NotAuthorized>
+                        <a href="/Account/Login" class="d-block">Guest</a>
+                    </NotAuthorized>
                 </AuthorizeView>
             </div>
         </div>
 
-        <!-- Sidebar menu -->
-        <nav class="mt-2">
-            <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false">
-                <!-- Dashboard -->
-                <li class="nav-item menu-open">
-                    <NavLink href="" Match="NavLinkMatch.All" class="nav-link active">
-                        <i class="nav-icon fas fa-tachometer-alt"></i>
-                        <p>Dashboard</p>
-                    </NavLink>
-                </li>
-
-                <!-- Check if the user has the 'System' role -->
-                <AuthorizeView Roles="System">
-                    <Authorized>
-                        <!-- Show all menus for System Admin -->
-                        <li class="nav-item has-treeview @(isAcademicsOpen ? "menu-open" : "")">
-                            <a href="javascript:void(0);" class="nav-link" @onclick="ToggleAcademics">
-                                <i class="nav-icon fas fa-th"></i>
-                                <p>
-                                    Academics
-                                    <i class="right fas fa-angle-left"></i>
-                                </p>
-                            </a>
-                            <ul class="nav nav-treeview @(isAcademicsOpen ? "show" : "")">
-                                <li class="nav-item">
-                                    <NavLink href="/students-list" class="nav-link">
-                                        <i class="far fa-circle nav-icon"></i>
-                                        <p>Students</p>
-                                    </NavLink>
-                                </li>
-                                <li class="nav-item">
-                                    <NavLink href="/parents-list" class="nav-link">
-                                        <i class="far fa-circle nav-icon"></i>
-                                        <p>Parents</p>
-                                    </NavLink>
-                                </li>
-                                <li class="nav-item">
-                                    <NavLink href="/teachers-list" class="nav-link">
-                                        <i class="far fa-circle nav-icon"></i>
-                                        <p>Teachers</p>
-                                    </NavLink>
-                                </li>
-                                <li class="nav-item">
-                                    <NavLink href="/subjects-list" class="nav-link">
-                                        <i class="far fa-circle nav-icon"></i>
-                                        <p>Subjects</p>
-                                    </NavLink>
-                                </li>
-                                <li class="nav-item">
-                                    <NavLink href="/departments-list" class="nav-link">
-                                        <i class="far fa-circle nav-icon"></i>
-                                        <p>Departments</p>
-                                    </NavLink>
-                                </li>
-                            </ul>
-                        </li>
-
-                        <li class="nav-item has-treeview @(isLibraryOpen ? "menu-open" : "")">
-                            <a href="javascript:void(0);" class="nav-link" @onclick="ToggleLibrary">
-                                <i class="nav-icon fas fa-book"></i>
-                                <p>
-                                    Library
-                                    <i class="right fas fa-angle-left"></i>
-                                </p>
-                            </a>
-                            <ul class="nav nav-treeview @(isLibraryOpen ? "show" : "")">
-                                <li class="nav-item">
-                                    <NavLink href="/books-list" class="nav-link">
-                                        <i class="far fa-circle nav-icon"></i>
-                                        <p>Books</p>
-                                    </NavLink>
-                                </li>
-                                <li class="nav-item">
-                                    <NavLink href="/bookIssuances-list" class="nav-link">
-                                        <i class="far fa-circle nav-icon"></i>
-                                        <p>Book Issuance History</p>
-                                    </NavLink>
-                                </li>
-                                <li class="nav-item">
-                                    <NavLink href="/returnedBooks-list" class="nav-link">
-                                        <i class="far fa-circle nav-icon"></i>
-                                        <p>Returned Book History</p>
-                                    </NavLink>
-                                </li>
-                            </ul>
-                        </li>
-
-                        <li class="nav-item has-treeview @(isHostelAdminOpen ? "menu-open" : "")">
-                            <a href="javascript:void(0);" class="nav-link" @onclick="ToggleHostelAdministration">
-                                <i class="nav-icon fas fa-bed"></i>
-                                <p>
-                                    Hostel
-                                    <i class="right fas fa-angle-left"></i>
-                                </p>
-                            </a>
-                            <ul class="nav nav-treeview @(isHostelAdminOpen ? "show" : "")">
-                                <li class="nav-item">
-                                    <NavLink href="/hostels-list" class="nav-link">
-                                        <i class="far fa-circle nav-icon"></i>
-                                        <p>Hostel List</p>
-                                    </NavLink>
-                                </li>
-                                <li class="nav-item">
-                                    <NavLink href="/hostelrooms-list" class="nav-link">
-                                        <i class="far fa-circle nav-icon"></i>
-                                        <p>Hostel Room</p>
-                                    </NavLink>
-                                </li>
-                            </ul>
-                        </li>
-
-                        <li class="nav-item has-treeview @(isComplaintAdminOpen ? "menu-open" : "")">
-                            <a href="javascript:void(0);" class="nav-link" @onclick="ToggleFrontOfficeAdministration">
-                                <i class="nav-icon fas fa-clipboard"></i>
-                                <p>
-                                    Front Office
-                                    <i class="right fas fa-angle-left"></i>
-                                </p>
-                            </a>
-                            <ul class="nav nav-treeview @(isComplaintAdminOpen ? "show" : "")">
-                                <li class="nav-item">
-                                    <NavLink href="/complaints-list" class="nav-link">
-                                        <i class="far fa-circle nav-icon"></i>
-                                        <p>Complaint</p>
-                                    </NavLink>
-                                </li>
-                            </ul>
-                        </li>
-
-                        <li class="nav-item has-treeview @(isSystemAdminOpen ? "menu-open" : "")">
-                            <a href="javascript:void(0);" class="nav-link" @onclick="ToggleSystemAdministration">
-                                <i class="nav-icon fas fa-user-cog"></i>
-                                <p>
-                                    System Administration
-                                    <i class="right fas fa-angle-left"></i>
-                                </p>
-                            </a>
-                            <ul class="nav nav-treeview @(isSystemAdminOpen ? "show" : "")">
-                                <li class="nav-item">
-                                    <NavLink href="/academicYears-list" class="nav-link">
-                                        <i class="far fa-circle nav-icon"></i>
-                                        <p>Academic Year</p>
-                                    </NavLink>
-                                </li>
-                                <li class="nav-item">
-                                    <NavLink href="users-list" class="nav-link">
-                                        <i class="far fa-circle nav-icon"></i>
-                                        <p>User Management</p>
-                                    </NavLink>
-                                </li>
-                                <li class="nav-item">
-                                    <NavLink href="pending-accounts" class="nav-link">
-                                        <i class="far fa-circle nav-icon"></i>
-                                        <p>Pending Approval</p>
-                                    </NavLink>
-                                </li>
-                            </ul>
-                        </li>
-
-                        <li class="nav-item has-treeview @(isSystemSettingAdminOpen ? "menu-open" : "")">
-                            <a href="javascript:void(0);" class="nav-link" @onclick="ToggleSystemSettingAdministration">
-                                <i class="nav-icon fas fa-cogs"></i>
-                                <p>
-                                    System Setting
-                                    <i class="right fas fa-angle-left"></i>
-                                </p>
-                            </a>
-                            <ul class="nav nav-treeview @(isSystemSettingAdminOpen ? "show" : "")">
-                                <li class="nav-item">
-                                    <NavLink href="/countries-list" class="nav-link">
-                                        <i class="far fa-circle nav-icon"></i>
-                                        <p>Countries</p>
-                                    </NavLink>
-                                </li>
-                                <li class="nav-item">
-                                    <NavLink href="/systemCodes-list" class="nav-link">
-                                        <i class="far fa-circle nav-icon"></i>
-                                        <p>System Codes</p>
-                                    </NavLink>
-                                </li>
-                                <li class="nav-item">
-                                    <NavLink href="/systemCodeDetails-list" class="nav-link">
-                                        <i class="far fa-circle nav-icon"></i>
-                                        <p>System Code Details</p>
-                                    </NavLink>
-                                </li>
-                            </ul>
-                        </li>
-                    </Authorized>
-                </AuthorizeView>
-
-                <!-- For non-System roles, only show corresponding sections -->
-                <AuthorizeView Roles="Academic">
-                    <Authorized>
-                        <!-- Academics Dropdown for Academic role -->
-                        <li class="nav-item has-treeview @(!isAcademicsOpen ? "menu-open" : "")">
-                            <a href="javascript:void(0);" class="nav-link" @onclick="ToggleAcademics">
-                                <i class="nav-icon fas fa-th"></i>
-                                <p>
-                                    Academics
-                                    <i class="right fas fa-angle-left"></i>
-                                </p>
-                            </a>
-                            <ul class="nav nav-treeview @(isAcademicsOpen ? "show" : "")">
-                                <li class="nav-item">
-                                    <NavLink href="/students-list" class="nav-link">
-                                        <i class="far fa-circle nav-icon"></i>
-                                        <p>Students</p>
-                                    </NavLink>
-                                </li>
-                                <li class="nav-item">
-                                    <NavLink href="/parents-list" class="nav-link">
-                                        <i class="far fa-circle nav-icon"></i>
-                                        <p>Parents</p>
-                                    </NavLink>
-                                </li>
-                                <li class="nav-item">
-                                    <NavLink href="/teachers-list" class="nav-link">
-                                        <i class="far fa-circle nav-icon"></i>
-                                        <p>Teachers</p>
-                                    </NavLink>
-                                </li>
-                                <li class="nav-item">
-                                    <NavLink href="/subjects-list" class="nav-link">
-                                        <i class="far fa-circle nav-icon"></i>
-                                        <p>Subjects</p>
-                                    </NavLink>
-                                </li>
-                                <li class="nav-item">
-                                    <NavLink href="/departments-list" class="nav-link">
-                                        <i class="far fa-circle nav-icon"></i>
-                                        <p>Departments</p>
-                                    </NavLink>
-                                </li>
-                            </ul>
-                        </li>
-                    </Authorized>
-                </AuthorizeView>
-
-                <AuthorizeView Roles="Library">
-                    <Authorized>
-                        <!-- Library Dropdown for Library role -->
-                        <li class="nav-item has-treeview @(!isLibraryOpen ? "menu-open" : "")">
-                            <a href="javascript:void(0);" class="nav-link" @onclick="ToggleLibrary">
-                                <i class="nav-icon fas fa-book"></i>
-                                <p>
-                                    Library
-                                    <i class="right fas fa-angle-left"></i>
-                                </p>
-                            </a>
-                            <ul class="nav nav-treeview @(isLibraryOpen ? "show" : "")">
-                                <li class="nav-item">
-                                    <NavLink href="/books-list" class="nav-link">
-                                        <i class="far fa-circle nav-icon"></i>
-                                        <p>Books</p>
-                                    </NavLink>
-                                </li>
-                                <li class="nav-item">
-                                    <NavLink href="/bookIssuances-list" class="nav-link">
-                                        <i class="far fa-circle nav-icon"></i>
-                                        <p>Book Issuance History</p>
-                                    </NavLink>
-                                </li>
-                                <li class="nav-item">
-                                    <NavLink href="/returnedBooks-list" class="nav-link">
-                                        <i class="far fa-circle nav-icon"></i>
-                                        <p>Returned Book History</p>
-                                    </NavLink>
-                                </li>
-                            </ul>
-                        </li>
-                    </Authorized>
-                </AuthorizeView>
-
-                <AuthorizeView Roles="Hostel">
-                    <Authorized>
-                        <li class="nav-item has-treeview @(!isHostelAdminOpen ? "menu-open" : "")">
-                            <a href="javascript:void(0);" class="nav-link" @onclick="ToggleHostelAdministration">
-                                <i class="nav-icon fas fa-bed"></i>
-                                <p>
-                                    Hostel
-                                    <i class="right fas fa-angle-left"></i>
-                                </p>
-                            </a>
-                            <ul class="nav nav-treeview @(isHostelAdminOpen ? "show" : "")">
-                                <li class="nav-item">
-                                    <NavLink href="/hostels-list" class="nav-link">
-                                        <i class="far fa-circle nav-icon"></i>
-                                        <p>Hostel List</p>
-                                    </NavLink>
-                                </li>
-                                <li class="nav-item">
-                                    <NavLink href="/hostelrooms-list" class="nav-link">
-                                        <i class="far fa-circle nav-icon"></i>
-                                        <p>Hostel Room</p>
-                                    </NavLink>
-                                </li>
-                            </ul>
-                        </li>
-                    </Authorized>
-                </AuthorizeView>
-
-                <AuthorizeView Roles="SystemSetting">
-                    <Authorized>
-                        <li class="nav-item has-treeview @(!isSystemSettingAdminOpen ? "menu-open" : "")">
-                            <a href="javascript:void(0);" class="nav-link" @onclick="ToggleSystemSettingAdministration">
-                                <i class="nav-icon fas fa-cogs"></i>
-                                <p>
-                                    System Setting
-                                    <i class="right fas fa-angle-left"></i>
-                                </p>
-                            </a>
-                            <ul class="nav nav-treeview @(isSystemSettingAdminOpen ? "show" : "")">
-                                <li class="nav-item">
-                                    <NavLink href="/countries-list" class="nav-link">
-                                        <i class="far fa-circle nav-icon"></i>
-                                        <p>Countries</p>
-                                    </NavLink>
-                                </li>
-                                <li class="nav-item">
-                                    <NavLink href="/systemCodes-list" class="nav-link">
-                                        <i class="far fa-circle nav-icon"></i>
-                                        <p>System Codes</p>
-                                    </NavLink>
-                                </li>
-                                <li class="nav-item">
-                                    <NavLink href="/systemCodeDetails-list" class="nav-link">
-                                        <i class="far fa-circle nav-icon"></i>
-                                        <p>System Code Details</p>
-                                    </NavLink>
-                                </li>
-                            </ul>
-                        </li>
-                    </Authorized>
-                </AuthorizeView>
-
-                <AuthorizeView Roles="FrontOffice">
-                    <Authorized>
-                        <li class="nav-item has-treeview @(!isComplaintAdminOpen ? "menu-open" : "")">
-                            <a href="javascript:void(0);" class="nav-link" @onclick="ToggleFrontOfficeAdministration">
-                                <i class="nav-icon fas fa-clipboard"></i>
-                                <p>
-                                    Front Office
-                                    <i class="right fas fa-angle-left"></i>
-                                </p>
-                            </a>
-                            <ul class="nav nav-treeview @(isComplaintAdminOpen ? "show" : "")">
-                                <li class="nav-item">
-                                    <NavLink href="/complaints-list" class="nav-link">
-                                        <i class="far fa-circle nav-icon"></i>
-                                        <p>Complaint</p>
-                                    </NavLink>
-                                </li>
-                            </ul>
-                        </li>
-                    </Authorized>
-                </AuthorizeView>
-
-            </ul>
-
-            <AuthorizeView>
-                <Authorized>
-                    <div class="nav-item px-3">
-                        <NavLink class="nav-link" href="Account/Manage">
-                            <span class="bi bi-person-fill-nav-menu" aria-hidden="true"></span> Manage Account
+        <!-- Conditional Menu Rendering -->
+        @if (IsConfirmationPage())
+        {
+            <!-- Show Guest Menu for Confirmation Pages -->
+            <nav class="mt-2">
+                <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false">
+                    <li class="nav-item">
+                        <NavLink href="/" class="nav-link">
+                            <i class="nav-icon fas fa-home"></i>
+                            <p>Home</p>
                         </NavLink>
-                    </div>
-                    <div class="nav-item px-3">
-                        <form action="Account/Logout" method="post">
-                            <AntiforgeryToken />
-                            <input type="hidden" name="ReturnUrl" value="@currentUrl" />
-                            <button type="submit" class="nav-link" href="Account/Login">
-                                <span class="bi bi-arrow-bar-left-nav-menu" aria-hidden="true"></span> Logout
-                            </button>
-                        </form>
-                    </div>
-                </Authorized>
-                <NotAuthorized>
-                    <div class="nav-item px-3">
-                        <NavLink class="nav-link" href="Account/Register">
-                            <span class="bi bi-person-nav-menu" aria-hidden="true"></span> Register
+                    </li>
+                    <li class="nav-item">
+                        <NavLink href="/Account/Login" class="nav-link">
+                            <i class="nav-icon fas fa-sign-in-alt"></i>
+                            <p>Login</p>
                         </NavLink>
-                    </div>
-                    <div class="nav-item px-3">
-                        <NavLink class="nav-link" href="Account/Login">
-                            <span class="bi bi-person-badge-nav-menu" aria-hidden="true"></span> Login
+                    </li>
+                    <li class="nav-item">
+                        <NavLink href="/Account/Register" class="nav-link">
+                            <i class="nav-icon fas fa-user-plus"></i>
+                            <p>Register</p>
                         </NavLink>
-                    </div>
-                </NotAuthorized>
-            </AuthorizeView>
-        </nav>
+                    </li>
+                </ul>
+            </nav>
+        }
+        else
+        {
+            <!-- Full Menu with Role-based Options -->
+            <nav class="mt-2">
+                <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false">
+                    <!-- Dashboard -->
+                    <li class="nav-item menu-open">
+                        <NavLink href="" Match="NavLinkMatch.All" class="nav-link active">
+                            <i class="nav-icon fas fa-tachometer-alt"></i>
+                            <p>Dashboard</p>
+                        </NavLink>
+                    </li>
 
+                    <!-- Check if the user has the 'System' role -->
+                    <AuthorizeView Roles="System">
+                        <Authorized>
+                            <!-- Show all menus for System Admin -->
+                            <li class="nav-item has-treeview @(isAcademicsOpen ? "menu-open" : "")">
+                                <a href="javascript:void(0);" class="nav-link" @onclick="ToggleAcademics">
+                                    <i class="nav-icon fas fa-th"></i>
+                                    <p>
+                                        Academics
+                                        <i class="right fas fa-angle-left"></i>
+                                    </p>
+                                </a>
+                                <ul class="nav nav-treeview @(isAcademicsOpen ? "show" : "")">
+                                    <li class="nav-item">
+                                        <NavLink href="/students-list" class="nav-link">
+                                            <i class="far fa-circle nav-icon"></i>
+                                            <p>Students</p>
+                                        </NavLink>
+                                    </li>
+                                    <li class="nav-item">
+                                        <NavLink href="/parents-list" class="nav-link">
+                                            <i class="far fa-circle nav-icon"></i>
+                                            <p>Parents</p>
+                                        </NavLink>
+                                    </li>
+                                    <li class="nav-item">
+                                        <NavLink href="/teachers-list" class="nav-link">
+                                            <i class="far fa-circle nav-icon"></i>
+                                            <p>Teachers</p>
+                                        </NavLink>
+                                    </li>
+                                    <li class="nav-item">
+                                        <NavLink href="/subjects-list" class="nav-link">
+                                            <i class="far fa-circle nav-icon"></i>
+                                            <p>Subjects</p>
+                                        </NavLink>
+                                    </li>
+                                    <li class="nav-item">
+                                        <NavLink href="/departments-list" class="nav-link">
+                                            <i class="far fa-circle nav-icon"></i>
+                                            <p>Departments</p>
+                                        </NavLink>
+                                    </li>
+                                </ul>
+                            </li>
+
+                            <li class="nav-item has-treeview @(isLibraryOpen ? "menu-open" : "")">
+                                <a href="javascript:void(0);" class="nav-link" @onclick="ToggleLibrary">
+                                    <i class="nav-icon fas fa-book"></i>
+                                    <p>
+                                        Library
+                                        <i class="right fas fa-angle-left"></i>
+                                    </p>
+                                </a>
+                                <ul class="nav nav-treeview @(isLibraryOpen ? "show" : "")">
+                                    <li class="nav-item">
+                                        <NavLink href="/books-list" class="nav-link">
+                                            <i class="far fa-circle nav-icon"></i>
+                                            <p>Books</p>
+                                        </NavLink>
+                                    </li>
+                                    <li class="nav-item">
+                                        <NavLink href="/bookIssuances-list" class="nav-link">
+                                            <i class="far fa-circle nav-icon"></i>
+                                            <p>Book Issuance History</p>
+                                        </NavLink>
+                                    </li>
+                                    <li class="nav-item">
+                                        <NavLink href="/returnedBooks-list" class="nav-link">
+                                            <i class="far fa-circle nav-icon"></i>
+                                            <p>Returned Book History</p>
+                                        </NavLink>
+                                    </li>
+                                </ul>
+                            </li>
+
+                            <li class="nav-item has-treeview @(isHostelAdminOpen ? "menu-open" : "")">
+                                <a href="javascript:void(0);" class="nav-link" @onclick="ToggleHostelAdministration">
+                                    <i class="nav-icon fas fa-bed"></i>
+                                    <p>
+                                        Hostel
+                                        <i class="right fas fa-angle-left"></i>
+                                    </p>
+                                </a>
+                                <ul class="nav nav-treeview @(isHostelAdminOpen ? "show" : "")">
+                                    <li class="nav-item">
+                                        <NavLink href="/hostels-list" class="nav-link">
+                                            <i class="far fa-circle nav-icon"></i>
+                                            <p>Hostel List</p>
+                                        </NavLink>
+                                    </li>
+                                    <li class="nav-item">
+                                        <NavLink href="/hostelrooms-list" class="nav-link">
+                                            <i class="far fa-circle nav-icon"></i>
+                                            <p>Hostel Room</p>
+                                        </NavLink>
+                                    </li>
+                                </ul>
+                            </li>
+
+                            <li class="nav-item has-treeview @(isComplaintAdminOpen ? "menu-open" : "")">
+                                <a href="javascript:void(0);" class="nav-link" @onclick="ToggleFrontOfficeAdministration">
+                                    <i class="nav-icon fas fa-clipboard"></i>
+                                    <p>
+                                        Front Office
+                                        <i class="right fas fa-angle-left"></i>
+                                    </p>
+                                </a>
+                                <ul class="nav nav-treeview @(isComplaintAdminOpen ? "show" : "")">
+                                    <li class="nav-item">
+                                        <NavLink href="/complaints-list" class="nav-link">
+                                            <i class="far fa-circle nav-icon"></i>
+                                            <p>Complaint</p>
+                                        </NavLink>
+                                    </li>
+                                </ul>
+                            </li>
+
+                            <li class="nav-item has-treeview @(isSystemAdminOpen ? "menu-open" : "")">
+                                <a href="javascript:void(0);" class="nav-link" @onclick="ToggleSystemAdministration">
+                                    <i class="nav-icon fas fa-user-cog"></i>
+                                    <p>
+                                        System Administration
+                                        <i class="right fas fa-angle-left"></i>
+                                    </p>
+                                </a>
+                                <ul class="nav nav-treeview @(isSystemAdminOpen ? "show" : "")">
+                                    <li class="nav-item">
+                                        <NavLink href="/academicYears-list" class="nav-link">
+                                            <i class="far fa-circle nav-icon"></i>
+                                            <p>Academic Year</p>
+                                        </NavLink>
+                                    </li>
+                                    <li class="nav-item">
+                                        <NavLink href="users-list" class="nav-link">
+                                            <i class="far fa-circle nav-icon"></i>
+                                            <p>User Management</p>
+                                        </NavLink>
+                                    </li>
+                                    <li class="nav-item">
+                                        <NavLink href="pending-accounts" class="nav-link">
+                                            <i class="far fa-circle nav-icon"></i>
+                                            <p>Pending Approval</p>
+                                        </NavLink>
+                                    </li>
+                                </ul>
+                            </li>
+
+                            <li class="nav-item has-treeview @(isSystemSettingAdminOpen ? "menu-open" : "")">
+                                <a href="javascript:void(0);" class="nav-link" @onclick="ToggleSystemSettingAdministration">
+                                    <i class="nav-icon fas fa-cogs"></i>
+                                    <p>
+                                        System Setting
+                                        <i class="right fas fa-angle-left"></i>
+                                    </p>
+                                </a>
+                                <ul class="nav nav-treeview @(isSystemSettingAdminOpen ? "show" : "")">
+                                    <li class="nav-item">
+                                        <NavLink href="/countries-list" class="nav-link">
+                                            <i class="far fa-circle nav-icon"></i>
+                                            <p>Countries</p>
+                                        </NavLink>
+                                    </li>
+                                    <li class="nav-item">
+                                        <NavLink href="/systemCodes-list" class="nav-link">
+                                            <i class="far fa-circle nav-icon"></i>
+                                            <p>System Codes</p>
+                                        </NavLink>
+                                    </li>
+                                    <li class="nav-item">
+                                        <NavLink href="/systemCodeDetails-list" class="nav-link">
+                                            <i class="far fa-circle nav-icon"></i>
+                                            <p>System Code Details</p>
+                                        </NavLink>
+                                    </li>
+                                </ul>
+                            </li>
+                        </Authorized>
+                    </AuthorizeView>
+
+                    <!-- For non-System roles, only show corresponding sections -->
+                    <AuthorizeView Roles="Academic">
+                        <Authorized>
+                            <!-- Academics Dropdown for Academic role -->
+                            <li class="nav-item has-treeview @(!isAcademicsOpen ? "menu-open" : "")">
+                                <a href="javascript:void(0);" class="nav-link" @onclick="ToggleAcademics">
+                                    <i class="nav-icon fas fa-th"></i>
+                                    <p>
+                                        Academics
+                                        <i class="right fas fa-angle-left"></i>
+                                    </p>
+                                </a>
+                                <ul class="nav nav-treeview @(isAcademicsOpen ? "show" : "")">
+                                    <li class="nav-item">
+                                        <NavLink href="/students-list" class="nav-link">
+                                            <i class="far fa-circle nav-icon"></i>
+                                            <p>Students</p>
+                                        </NavLink>
+                                    </li>
+                                    <li class="nav-item">
+                                        <NavLink href="/parents-list" class="nav-link">
+                                            <i class="far fa-circle nav-icon"></i>
+                                            <p>Parents</p>
+                                        </NavLink>
+                                    </li>
+                                    <li class="nav-item">
+                                        <NavLink href="/teachers-list" class="nav-link">
+                                            <i class="far fa-circle nav-icon"></i>
+                                            <p>Teachers</p>
+                                        </NavLink>
+                                    </li>
+                                    <li class="nav-item">
+                                        <NavLink href="/subjects-list" class="nav-link">
+                                            <i class="far fa-circle nav-icon"></i>
+                                            <p>Subjects</p>
+                                        </NavLink>
+                                    </li>
+                                    <li class="nav-item">
+                                        <NavLink href="/departments-list" class="nav-link">
+                                            <i class="far fa-circle nav-icon"></i>
+                                            <p>Departments</p>
+                                        </NavLink>
+                                    </li>
+                                </ul>
+                            </li>
+                        </Authorized>
+                    </AuthorizeView>
+
+                    <AuthorizeView Roles="Library">
+                        <Authorized>
+                            <!-- Library Dropdown for Library role -->
+                            <li class="nav-item has-treeview @(!isLibraryOpen ? "menu-open" : "")">
+                                <a href="javascript:void(0);" class="nav-link" @onclick="ToggleLibrary">
+                                    <i class="nav-icon fas fa-book"></i>
+                                    <p>
+                                        Library
+                                        <i class="right fas fa-angle-left"></i>
+                                    </p>
+                                </a>
+                                <ul class="nav nav-treeview @(isLibraryOpen ? "show" : "")">
+                                    <li class="nav-item">
+                                        <NavLink href="/books-list" class="nav-link">
+                                            <i class="far fa-circle nav-icon"></i>
+                                            <p>Books</p>
+                                        </NavLink>
+                                    </li>
+                                    <li class="nav-item">
+                                        <NavLink href="/bookIssuances-list" class="nav-link">
+                                            <i class="far fa-circle nav-icon"></i>
+                                            <p>Book Issuance History</p>
+                                        </NavLink>
+                                    </li>
+                                    <li class="nav-item">
+                                        <NavLink href="/returnedBooks-list" class="nav-link">
+                                            <i class="far fa-circle nav-icon"></i>
+                                            <p>Returned Book History</p>
+                                        </NavLink>
+                                    </li>
+                                </ul>
+                            </li>
+                        </Authorized>
+                    </AuthorizeView>
+
+                    <AuthorizeView Roles="Hostel">
+                        <Authorized>
+                            <li class="nav-item has-treeview @(!isHostelAdminOpen ? "menu-open" : "")">
+                                <a href="javascript:void(0);" class="nav-link" @onclick="ToggleHostelAdministration">
+                                    <i class="nav-icon fas fa-bed"></i>
+                                    <p>
+                                        Hostel
+                                        <i class="right fas fa-angle-left"></i>
+                                    </p>
+                                </a>
+                                <ul class="nav nav-treeview @(isHostelAdminOpen ? "show" : "")">
+                                    <li class="nav-item">
+                                        <NavLink href="/hostels-list" class="nav-link">
+                                            <i class="far fa-circle nav-icon"></i>
+                                            <p>Hostel List</p>
+                                        </NavLink>
+                                    </li>
+                                    <li class="nav-item">
+                                        <NavLink href="/hostelrooms-list" class="nav-link">
+                                            <i class="far fa-circle nav-icon"></i>
+                                            <p>Hostel Room</p>
+                                        </NavLink>
+                                    </li>
+                                </ul>
+                            </li>
+                        </Authorized>
+                    </AuthorizeView>
+
+                    <AuthorizeView Roles="SystemSetting">
+                        <Authorized>
+                            <li class="nav-item has-treeview @(!isSystemSettingAdminOpen ? "menu-open" : "")">
+                                <a href="javascript:void(0);" class="nav-link" @onclick="ToggleSystemSettingAdministration">
+                                    <i class="nav-icon fas fa-cogs"></i>
+                                    <p>
+                                        System Setting
+                                        <i class="right fas fa-angle-left"></i>
+                                    </p>
+                                </a>
+                                <ul class="nav nav-treeview @(isSystemSettingAdminOpen ? "show" : "")">
+                                    <li class="nav-item">
+                                        <NavLink href="/countries-list" class="nav-link">
+                                            <i class="far fa-circle nav-icon"></i>
+                                            <p>Countries</p>
+                                        </NavLink>
+                                    </li>
+                                    <li class="nav-item">
+                                        <NavLink href="/systemCodes-list" class="nav-link">
+                                            <i class="far fa-circle nav-icon"></i>
+                                            <p>System Codes</p>
+                                        </NavLink>
+                                    </li>
+                                    <li class="nav-item">
+                                        <NavLink href="/systemCodeDetails-list" class="nav-link">
+                                            <i class="far fa-circle nav-icon"></i>
+                                            <p>System Code Details</p>
+                                        </NavLink>
+                                    </li>
+                                </ul>
+                            </li>
+                        </Authorized>
+                    </AuthorizeView>
+
+                    <AuthorizeView Roles="FrontOffice">
+                        <Authorized>
+                            <li class="nav-item has-treeview @(!isComplaintAdminOpen ? "menu-open" : "")">
+                                <a href="javascript:void(0);" class="nav-link" @onclick="ToggleFrontOfficeAdministration">
+                                    <i class="nav-icon fas fa-clipboard"></i>
+                                    <p>
+                                        Front Office
+                                        <i class="right fas fa-angle-left"></i>
+                                    </p>
+                                </a>
+                                <ul class="nav nav-treeview @(isComplaintAdminOpen ? "show" : "")">
+                                    <li class="nav-item">
+                                        <NavLink href="/complaints-list" class="nav-link">
+                                            <i class="far fa-circle nav-icon"></i>
+                                            <p>Complaint</p>
+                                        </NavLink>
+                                    </li>
+                                </ul>
+                            </li>
+                        </Authorized>
+                    </AuthorizeView>
+
+                </ul>
+
+                <AuthorizeView>
+                    <Authorized>
+                        <div class="nav-item px-3">
+                            <NavLink class="nav-link" href="Account/Manage">
+                                <span class="bi bi-person-fill-nav-menu" aria-hidden="true"></span> Manage Account
+                            </NavLink>
+                        </div>
+                        <div class="nav-item px-3">
+                            <form action="Account/Logout" method="post">
+                                <AntiforgeryToken />
+                                <input type="hidden" name="ReturnUrl" value="@currentUrl" />
+                                <button type="submit" class="nav-link" href="Account/Login">
+                                    <span class="bi bi-arrow-bar-left-nav-menu" aria-hidden="true"></span> Logout
+                                </button>
+                            </form>
+                        </div>
+                    </Authorized>
+                    <NotAuthorized>
+                        <div class="nav-item px-3">
+                            <NavLink class="nav-link" href="Account/Register">
+                                <span class="bi bi-person-nav-menu" aria-hidden="true"></span> Register
+                            </NavLink>
+                        </div>
+                        <div class="nav-item px-3">
+                            <NavLink class="nav-link" href="Account/Login">
+                                <span class="bi bi-person-badge-nav-menu" aria-hidden="true"></span> Login
+                            </NavLink>
+                        </div>
+                    </NotAuthorized>
+                </AuthorizeView>
+            </nav>
+        }
     </div>
 </aside>
 
@@ -446,41 +477,41 @@
         NavigationManager.LocationChanged += OnLocationChanged;
     }
 
+    private bool IsConfirmationPage()
+    {
+        var relativeUrl = NavigationManager.ToBaseRelativePath(NavigationManager.Uri).ToLower();
+        return relativeUrl.Contains("confirmemail") || relativeUrl.Contains("confirmemailchange");
+    }
+
+
+    private bool isUserDataLoaded = false;
+
     private async Task LoadUserDataAsync()
     {
         try
         {
-            // Wait to acquire the lock (prevent concurrency issues)
             await _mutex.WaitAsync();
-
-            // Get the current user's authentication state
             var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
-            var user = authState.User;
+            var userClaims = authState.User;
 
-            if (user.Identity != null && user.Identity.IsAuthenticated)
+            if (userClaims.Identity != null && userClaims.Identity.IsAuthenticated)
             {
-                // Get email from claims
-                var email = user.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Email)?.Value;
-
-                if (!string.IsNullOrEmpty(email))
+                var userId = userClaims.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value; 
+                if (!string.IsNullOrEmpty(userId))
                 {
-                    // Find the user in the UserManager by email
-                    var appUser = await UserManager.FindByEmailAsync(email); // .ConfigureAwait(false)
-
+                    var appUser = await UserManager.FindByIdAsync(userId);
                     if (appUser != null)
                     {
-                        // Set the user name and photo URL
                         userName = $"{appUser.FirstName} {appUser.MiddleName} {appUser.LastName}";
-                        photoUrl = !string.IsNullOrEmpty(appUser.Photo)
-                            ? $"/Images/{appUser.Photo}"
-                            : "https://haycafe.vn/wp-content/uploads/2021/12/hinh-dai-dien-nu-chibi-cute.jpg"; // Fallback image
+                        photoUrl = !string.IsNullOrEmpty(appUser.Photo) ? $"/Images/{appUser.Photo}" : photoUrl;
                     }
                 }
             }
+            isUserDataLoaded = true; // Set the flag once data is loaded
+            StateHasChanged();
         }
         finally
         {
-            // Ensure the lock is released
             _mutex.Release();
         }
     }
@@ -491,39 +522,15 @@
         StateHasChanged();
     }
 
-    private void ToggleAcademics()
-    {
-        isAcademicsOpen = !isAcademicsOpen;
-    }
-
-    private void ToggleLibrary()
-    {
-        isLibraryOpen = !isLibraryOpen;
-    }
-
-    private void ToggleSystemAdministration()
-    {
-        isSystemAdminOpen = !isSystemAdminOpen;
-    }
-
-    private void ToggleSystemSettingAdministration()
-    {
-        isSystemSettingAdminOpen = !isSystemSettingAdminOpen;
-    }
-
-    private void ToggleHostelAdministration()
-    {
-        isHostelAdminOpen = !isHostelAdminOpen;
-    }
-
-    private void ToggleFrontOfficeAdministration()
-    {
-        isComplaintAdminOpen = !isComplaintAdminOpen;
-    }
+    private void ToggleAcademics() => isAcademicsOpen = !isAcademicsOpen;
+    private void ToggleLibrary() => isLibraryOpen = !isLibraryOpen;
+    private void ToggleSystemAdministration() => isSystemAdminOpen = !isSystemAdminOpen;
+    private void ToggleSystemSettingAdministration() => isSystemSettingAdminOpen = !isSystemSettingAdminOpen;
+    private void ToggleHostelAdministration() => isHostelAdminOpen = !isHostelAdminOpen;
+    private void ToggleFrontOfficeAdministration() => isComplaintAdminOpen = !isComplaintAdminOpen;
 
     public void Dispose()
     {
         NavigationManager.LocationChanged -= OnLocationChanged;
     }
 }
-

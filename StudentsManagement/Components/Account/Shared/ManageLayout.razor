@@ -1,15 +1,22 @@
-﻿@inherits LayoutComponentBase
+﻿@using Microsoft.AspNetCore.Identity
+@using StudentsManagement.Data
+@using System.Security.Claims
+@inject NavigationManager NavigationManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@* @inherits LayoutComponentBase
 @layout AccountLayout
 
 <div class="account-manage-container">
-    <h3 class="account-title">Manage your account</h3> <!-- Title outside the row -->
+     <h3 class="account-title">Manage your account</h3> <!-- Title outside the row --> 
     <div class="row content-row">
         <!-- Added class for row styling -->
-        <div class="col-md-5 menu-con">
+        <div class="col-md-4 menu-con">
             <ManageNavMenu />
         </div>
-        <div class="col-md-7">
+        <div class="col-md-4">
             @Body
+        </div>
+        <div class="col-md-4">
         </div>
     </div>
 </div>
@@ -24,17 +31,17 @@
         width: 100%; /* Make title span the full width */
     }
 
-    .dark-mode .account-manage-container{
+    .dark-mode .account-manage-container {
         background-color: #444444;
     }
+
     .account-manage-container {
         display: flex;
         flex-direction: column; /* Arrange title and row in a column */
         justify-content: center;
         align-items: center;
         min-height: 80vh; /* Adjust the height as needed */
-        padding: 20px;
-        padding-top: 10px;
+        padding: 10px;
         background-color: #DFEFF2;
         border-radius: 15px; /* Rounded corners */
         box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Shadow effect */
@@ -50,3 +57,273 @@
         padding-top: 35px;
     }
 </style>
+ *@
+@* 
+@inherits LayoutComponentBase
+@layout AccountLayout
+
+@inject UserManager<ApplicationUser> UserManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+<div class="account-manage-container">
+    <h3 class="account-title">Manage your account</h3> <!-- Title outside the row -->
+    <div class="row content-row">
+        <!-- Sidebar menu with user photo -->
+        <div class="col-md-4 menu-con">
+            <ManageNavMenu />
+        </div>
+        <div class="col-md-4">
+            @Body
+        </div>
+        <div class="col-md-4">
+            <div class="user-panel">
+                <div class="image">
+                    <img src="@photoUrl" class="img-circle elevation-2" alt="User Image">
+                </div>
+                <div class="info">
+                    <p>@userName</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .account-title {
+        text-align: center;
+        font-size: 1.75rem;
+        font-weight: bold;
+        color: red;
+        margin-bottom: 20px;
+        width: 100%;
+    }
+
+    .dark-mode .account-manage-container {
+        background-color: #444444;
+    }
+
+    .account-manage-container {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        min-height: 80vh;
+        padding: 10px;
+        background-color: #DFEFF2;
+        border-radius: 15px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    .content-row {
+        width: 100%;
+        display: flex;
+        justify-content: center;
+    }
+
+    .menu-con {
+        padding-top: 35px;
+    }
+
+    /* Styles for user photo */
+    .user-panel {
+        display: flex;
+        align-items: center;
+        margin-top: 20px;
+    }
+
+    .user-panel .image {
+        margin-right: 10px;
+    }
+
+    .user-panel .info {
+        font-size: 1rem;
+        font-weight: bold;
+    }
+</style>
+
+@code {
+    private string? currentUrl;
+    private string? userName = "Guest";  // Default user name
+    private string photoUrl = "https://haycafe.vn/wp-content/uploads/2021/12/hinh-dai-dien-nu-chibi-cute.jpg"; // Default photo URL
+
+    // Mutex object to prevent overlapping operations
+    private SemaphoreSlim _mutex = new SemaphoreSlim(1, 1);
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadUserDataAsync();
+
+        currentUrl = NavigationManager.ToBaseRelativePath(NavigationManager.Uri);
+        NavigationManager.LocationChanged += OnLocationChanged;
+    }
+
+    private async Task LoadUserDataAsync()
+    {
+        try
+        {
+            // Wait to acquire the lock (prevent concurrency issues)
+            await _mutex.WaitAsync();
+
+            // Get the current user's authentication state
+            var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+            var user = authState.User;
+
+            if (user.Identity != null && user.Identity.IsAuthenticated)
+            {
+                // Get email from claims
+                var email = user.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Email)?.Value;
+
+                if (!string.IsNullOrEmpty(email))
+                {
+                    // Find the user in the UserManager by email
+                    var appUser = await UserManager.FindByEmailAsync(email).ConfigureAwait(false); // .ConfigureAwait(false)
+
+                    if (appUser != null)
+                    {
+                        // Set the user name and photo URL
+                        userName = $"{appUser.FirstName} {appUser.MiddleName} {appUser.LastName}";
+                        photoUrl = !string.IsNullOrEmpty(appUser.Photo)
+                            ? $"/Images/{appUser.Photo}"
+                            : "https://haycafe.vn/wp-content/uploads/2021/12/hinh-dai-dien-nu-chibi-cute.jpg"; // Fallback image
+                    }
+                }
+            }
+        }
+        finally
+        {
+            // Ensure the lock is released
+            _mutex.Release();
+        }
+    }
+
+    private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
+    {
+        currentUrl = NavigationManager.ToBaseRelativePath(e.Location);
+        StateHasChanged();
+    }
+}
+ *@
+
+@inherits LayoutComponentBase
+@layout AccountLayout
+@inject IServiceScopeFactory ServiceScopeFactory
+
+<div class="account-manage-container">
+    @* <h3 class="account-title">Manage your account</h3> *@
+    <div class="row content-row">
+        <div class="col-md-3 menu-con">
+            
+            <!-- User Profile Display -->
+            <div class="user-profile">
+                <img src="@photoUrl" alt="User Image" class="img-circle elevation-2 user-photo" />
+                <p class="user-name">@userName</p>
+            </div>
+        </div>
+        <div class="col-md-5">
+            @Body
+        </div>
+        <div class="col-md-4 menu-con">
+            <ManageNavMenu />
+        </div>
+    </div>
+</div>
+
+<style>
+    .account-title {
+        text-align: center;
+        font-size: 1.75rem;
+        font-weight: bold;
+        color: red;
+        margin-bottom: 20px;
+        width: 100%;
+    }
+
+    .dark-mode .account-manage-container {
+        background-color: #444444;
+    }
+
+    .account-manage-container {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        min-height: 80vh;
+        padding: 10px;
+        background-color: #DFEFF2;
+        border-radius: 15px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    .content-row {
+        width: 100%;
+        display: flex;
+        justify-content: center;
+    }
+
+    .menu-con {
+        padding-top: 35px;
+    }
+
+    .user-profile {
+        text-align: center;
+        margin-top: 15px;
+    }
+
+    .user-photo {
+        width: 200px;
+        height: 200px;
+        border-radius: 50%;
+        margin-bottom: 10px;
+    }
+
+    .user-name {
+        font-size: 1.25rem;
+        font-weight: bold;
+    }
+</style>
+
+@code {
+    private string? userName = "Guest"; // Default user name
+    private string photoUrl = "https://haycafe.vn/wp-content/uploads/2021/12/hinh-dai-dien-nu-chibi-cute.jpg"; // Default photo URL
+    private SemaphoreSlim _mutex = new SemaphoreSlim(1, 1);
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadUserDataAsync();
+    }
+
+    private async Task LoadUserDataAsync()
+    {
+        try
+        {
+            await _mutex.WaitAsync();
+
+            using var scope = ServiceScopeFactory.CreateScope();
+            var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+            var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+            var user = authState.User;
+
+            if (user.Identity is { IsAuthenticated: true })
+            {
+                var email = user.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Email)?.Value;
+
+                if (!string.IsNullOrEmpty(email))
+                {
+                    var appUser = await userManager.FindByEmailAsync(email);
+                    if (appUser != null)
+                    {
+                        userName = $"{appUser.FirstName} {appUser.MiddleName} {appUser.LastName}";
+                        photoUrl = !string.IsNullOrEmpty(appUser.Photo)
+                            ? $"/Images/{appUser.Photo}"
+                            : "https://haycafe.vn/wp-content/uploads/2021/12/hinh-dai-dien-nu-chibi-cute.jpg";
+                    }
+                }
+            }
+        }
+        finally
+        {
+            _mutex.Release();
+        }
+    }
+}
+

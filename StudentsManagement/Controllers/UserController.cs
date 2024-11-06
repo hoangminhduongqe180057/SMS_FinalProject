@@ -94,7 +94,8 @@ namespace StudentsManagement.Controllers
             {
                 Id = user.Id,
                 UserName = user.UserName,
-                Email = user.Email
+                Email = user.Email,
+                Photo = user.Photo
             };
 
             return Ok(userDto);
@@ -106,6 +107,7 @@ namespace StudentsManagement.Controllers
             public string Id { get; set; }
             public string UserName { get; set; }
             public string Email { get; set; }
+            public string Photo { get; set; } = "default.jpg";
         }
     }
 }

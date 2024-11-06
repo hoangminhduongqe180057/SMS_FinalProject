@@ -1,4 +1,4 @@
-﻿@page "/Account/ConfirmEmail"
+﻿@* @page "/Account/ConfirmEmail"
 
 @using System.Text
 @using Microsoft.AspNetCore.Identity
@@ -44,5 +44,103 @@
             var result = await UserManager.ConfirmEmailAsync(user, code);
             statusMessage = result.Succeeded ? "Thank you for confirming your email." : "Error confirming your email.";
         }
+    }
+}
+ *@
+
+
+@*  @page "/Account/ConfirmEmail"
+
+@using System.Text
+@using Microsoft.AspNetCore.Identity
+@using Microsoft.AspNetCore.WebUtilities
+@using StudentsManagement.Data
+@inject UserManager<ApplicationUser> UserManager
+@inject NavigationManager NavigationManager
+
+<PageTitle>Confirm email</PageTitle>
+
+<h1>Confirm email</h1>
+<StatusMessage Message="@statusMessage" />
+
+@code {
+    private string? statusMessage;
+
+    [SupplyParameterFromQuery]
+    private string? UserId { get; set; }
+
+    [SupplyParameterFromQuery]
+    private string? Code { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Early exit if parameters are null
+        if (UserId is null || Code is null)
+        {
+            NavigationManager.NavigateTo("/");
+            return;
+        }
+
+        // Fetch user and confirm email
+        var user = await UserManager.FindByIdAsync(UserId);
+        if (user is null)
+        {
+            statusMessage = $"Error loading user with ID {UserId}";
+            return;
+        }
+
+        // Decode and confirm email
+        var code = Encoding.UTF8.GetString(WebEncoders.Base64UrlDecode(Code));
+        var result = await UserManager.ConfirmEmailAsync(user, code);
+        statusMessage = result.Succeeded ? "Thank you for confirming your email." : "Error confirming your email.";
+    }
+}
+ *@
+
+ @page "/Account/ConfirmEmail"
+
+@using System.Text
+@using Microsoft.AspNetCore.Identity
+@using Microsoft.AspNetCore.WebUtilities
+@using StudentsManagement.Data
+@inject IServiceScopeFactory ScopeFactory
+@inject NavigationManager NavigationManager
+
+<PageTitle>Confirm email</PageTitle>
+
+<h1>Confirm email</h1>
+<StatusMessage Message="@statusMessage" />
+
+@code {
+    private string? statusMessage;
+
+    [SupplyParameterFromQuery]
+    private string? UserId { get; set; }
+
+    [SupplyParameterFromQuery]
+    private string? Code { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (UserId is null || Code is null)
+        {
+            NavigationManager.NavigateTo("/");
+            return;
+        }
+
+        // Create a new scope to handle UserManager operations
+        using var scope = ScopeFactory.CreateScope();
+        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+
+        var user = await userManager.FindByIdAsync(UserId);
+        if (user is null)
+        {
+            statusMessage = $"Error loading user with ID {UserId}";
+            return;
+        }
+
+        var decodedCode = Encoding.UTF8.GetString(WebEncoders.Base64UrlDecode(Code));
+        var result = await userManager.ConfirmEmailAsync(user, decodedCode);
+        statusMessage = result.Succeeded ? "Thank you for confirming your email." : "Error confirming your email.";
     }
 }

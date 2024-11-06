@@ -1,0 +1,28 @@
+﻿# version: '3.8'
+
+# services:
+#   app:
+#     build:
+#       context: .
+#       dockerfile: StudentsManagement/Dockerfile
+#     ports:
+#       - "8080:80"
+#     depends_on:
+#       - db
+#     environment:
+#       - ASPNETCORE_ENVIRONMENT=Production
+#       - ConnectionStrings__DefaultConnection=Server=DESKTOP-1LGLBF8;Database=[StudentsBlazorApp];TrustServerCertificate=True;MultipleActiveResultSets=true
+
+#   db:
+#     image: mcr.microsoft.com/mssql/server:2022-latest
+#     environment:
+#       - ACCEPT_EULA=Y
+#       - SA_PASSWORD=123456  # Define the 'sa' password for the SQL Server container
+#       - MSSQL_PID=Express
+#     ports:
+#       - "1433:1433"
+#     volumes:
+#       - sql_data:/var/opt/mssql
+
+# volumes:
+#   sql_data:

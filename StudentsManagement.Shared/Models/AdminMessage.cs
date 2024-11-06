@@ -23,7 +23,8 @@ namespace StudentsManagement.Shared.Models
         public bool IsOwnMessage { get; set; }  // Để phân biệt tin nhắn của admin đăng nhập hiện tại
         public string AvatarUrl { get; set; }  // URL ảnh đại diện
         public string AdminRole { get; set; }
-        public string AdminEmail { get; set; }
+       // public string AdminEmail { get; set; }
+        public string AdminId { get; set; }
     }
 
 }

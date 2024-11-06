@@ -20,7 +20,7 @@
 </head>
 <body>
     <app>
-        <component type="typeof(App)" render-mode="ServerPrerendered" />
+        <component type="typeof(App)" render-mode="Server" />   
     </app>
 
     <script src="/_framework/blazor.server.js" autostart="false"></script>
@@ -28,7 +28,7 @@
         function suppressBlazorReconnect() {
             Blazor.start({
                 reconnectionHandler: {
-                    onConnectionDown: () => { }, // Suppress default reconnect message
+                    onConnectionDown: () => { }, // Suppress default reconnect message          render-mode="ServerPrerendered"
                     onConnectionUp: () => { },   // Optionally handle reconnection here
                     onReconnectionStarting: () => { },
                     onReconnectionFailed: () => { }
